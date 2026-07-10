@@ -18,15 +18,18 @@
   function update() {
     var sel = String(window.getSelection ? window.getSelection() : "");
     var trimmed = sel.trim();
+    var b = ensureBadge();
     if (!trimmed) {
-      if (badge) badge.style.display = "none";
+      // Idle hint so the badge is always visible (and can be highlighted from
+      // the toolbar), not only while text is selected.
+      b.textContent = "Select text to count";
+      b.classList.add("is-idle");
       return;
     }
     var words = trimmed.split(/\s+/).length;
-    var b = ensureBadge();
+    b.classList.remove("is-idle");
     b.textContent =
       words + (words === 1 ? " word" : " words") + " · " + sel.length + " chars";
-    b.style.display = "block";
   }
 
   document.addEventListener("selectionchange", update);
@@ -34,5 +37,6 @@
   document.addEventListener("mouseup", function () {
     setTimeout(update, 0);
   });
+  update(); // show the idle badge right away
   console.log("Selection Word Count ready");
 })();

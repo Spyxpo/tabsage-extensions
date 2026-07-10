@@ -8,7 +8,7 @@
 #
 # Or just run ./create.sh with no arguments to be prompted for everything.
 #
-# The valid permissions are: content_scripts (required), storage, ai, tabs, notifications.
+# The valid permissions are: content_scripts (required), storage, ai, tabs, notifications, dialogs.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")" && pwd)"
@@ -73,7 +73,7 @@ fi
 # Normalize + validate the permissions list. content_scripts is always included.
 valid_perm() {
   case "$1" in
-    content_scripts|storage|ai|tabs|notifications) return 0 ;;
+    content_scripts|storage|ai|tabs|notifications|dialogs) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -83,7 +83,7 @@ for p in "${_perms[@]}"; do
   p="$(printf '%s' "$p" | tr -d '[:space:]')"
   [ -z "$p" ] && continue
   if ! valid_perm "$p"; then
-    echo "Error: unknown permission '$p'. Valid: content_scripts, storage, ai, tabs, notifications." >&2
+    echo "Error: unknown permission '$p'. Valid: content_scripts, storage, ai, tabs, notifications, dialogs." >&2
     exit 1
   fi
   [ "$p" = "content_scripts" ] && has_cs=1

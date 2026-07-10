@@ -1,6 +1,6 @@
 # Reading Time
 
-Shows a small "N min read" badge in the bottom right corner of article pages. Click the badge to dismiss it for that page.
+Shows a small "N min read" badge in the top right corner of article pages. Click the badge to dismiss it for that page.
 
 The estimate counts the words inside the page's `<article>` or `<main>` element (falling back to the whole body) and assumes a reading speed of 220 words per minute. Pages with fewer than 400 words get no badge, which keeps it off search results, dashboards, and other pages that are not articles.
 
@@ -10,4 +10,5 @@ Runs on all http and https pages. It reads the visible text of the page to count
 
 ## Changelog
 
+- 1.0.1: move the badge to the top-right so it doesn't overlap other extensions' bottom-right widgets.
 - 1.0.0: initial release.

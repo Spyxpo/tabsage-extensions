@@ -41,7 +41,7 @@ The fastest start is the scaffolder. From the repo root:
 Run `./create.sh` with no arguments to be prompted for each field instead. It
 creates `extensions/<id>/` with a `manifest.json`, a guarded `content.js`, a
 `style.css`, and a `README.md` ready to fill in. Valid permissions are
-`content_scripts` (required), `storage`, `ai`, `tabs`, and `notifications`.
+`content_scripts` (required), `storage`, `ai`, `tabs`, `notifications`, and `dialogs`.
 
 Prefer to start from a real extension? Copy one of these:
 
@@ -152,9 +152,25 @@ Read-only page/tab information plus opening a new tab. Metadata only — never h
 | --- | --- | --- |
 | `tabsage.notify(title, body)` | `void` | Shows a short toast in the browser UI. |
 
+### `dialogs` — modal alert / confirm / prompt
+
+Styled in-page modals. Unlike the page's own `window.alert/confirm/prompt`, these are self-contained and work even where a page blocks the native ones.
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `tabsage.dialog.alert(message, title?)` | `void` | One "OK" button. |
+| `tabsage.dialog.confirm(message, title?)` | `boolean` | `true` if confirmed, `false` if cancelled. |
+| `tabsage.dialog.prompt(message, default?, title?)` | `string \| null` | The entered text, or `null` if cancelled. |
+
+```js
+if (await tabsage.dialog.confirm("Clear this site's notes?")) {
+  await tabsage.storage.remove("note:" + location.hostname);
+}
+```
+
 ### Security model
 
-**Extensions cannot read or touch Tab Sage's saved passwords, autofill data, cookies, browsing history, bookmarks, or any security, privacy, or parental-control settings.** No permission grants any of that, and there is no command that exposes it. The full capability surface an extension can ever have is exactly the four `tabsage` groups documented above (`storage`, `ai`, `tabs`, `notifications`) plus the ordinary DOM of the pages it matches — nothing more. The browser's own password/autofill vault runs in a separate mechanism that the `tabsage` API does not expose.
+**Extensions cannot read or touch Tab Sage's saved passwords, autofill data, cookies, browsing history, bookmarks, or any security, privacy, or parental-control settings.** No permission grants any of that, and there is no command that exposes it. The full capability surface an extension can ever have is exactly the five `tabsage` groups documented above (`storage`, `ai`, `tabs`, `notifications`, `dialogs`) plus the ordinary DOM of the pages it matches — nothing more. The browser's own password/autofill vault runs in a separate mechanism that the `tabsage` API does not expose.
 
 Content scripts run in the page's own JavaScript world, not an isolated one, so the `tabsage` bridge is technically reachable by page script too. Because of that, the API deliberately exposes **no secret surfaces**:
 

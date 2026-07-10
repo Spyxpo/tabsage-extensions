@@ -1,7 +1,7 @@
 {
   "id": "reading-time",
   "name": "Reading Time",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shows an estimated reading time badge on articles and other text-heavy pages.",
   "author": "Spyxpo",
   "homepage": "https://github.com/Spyxpo",
