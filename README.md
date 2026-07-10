@@ -19,6 +19,8 @@ Installing, enabling, disabling, and removing extensions happens in Settings > E
 ```text
 create.sh              scaffolds a new extension folder — macOS/Linux (see "Writing an extension")
 create.bat             the same scaffolder for Windows
+cli/                   the `tabsage` CLI (scaffold extensions, add the UI kit)
+ui-kit/                the Tab Sage UI Kit — a drop-in UI framework for extensions
 extensions/
   reading-time/
     manifest.json
@@ -53,6 +55,17 @@ It creates `extensions/<id>/` with a `manifest.json`, a guarded `content.js`, a
 `style.css`, and a `README.md` ready to fill in. Valid permissions are
 `content_scripts` (required), `storage`, `ai`, `tabs`, `notifications`,
 `dialogs`, `adblock`, and `cutout`.
+
+There's also a `tabsage` CLI if you'd rather not clone this repo:
+
+```bash
+npx @tabsage/cli new my-extension --author "Your Name"       # scaffold
+npx @tabsage/cli new my-extension --author "Your Name" --ui  # + Tab Sage UI Kit
+```
+
+Add `--ui` to either the scaffolder or the CLI to start with the **Tab Sage UI
+Kit** already wired in — a ready-made, theme-matched UI toolkit for your
+extension (see below).
 
 Prefer to start from a real extension? Copy one of these:
 
@@ -117,6 +130,48 @@ A few practical notes:
 - Each extension folder should include a `README.md` that says what the extension does, which pages it touches, and lists changes per version. Reviewers read it, and so do users deciding whether to install.
 
 A manifest that requests an unknown permission is rejected at install time, so an older browser never silently ignores a capability your extension depends on.
+
+## The Tab Sage UI Kit
+
+Extensions draw their UI into the page they're injected into, so by default they
+don't get Tab Sage's look. The **Tab Sage UI Kit** fixes that: a single vendored
+file (`tabsage-ui.js`) that reproduces Tab Sage's design tokens, system fonts,
+and light/dark themes, and gives you ready-made **buttons, inputs, cards,
+switches, selects, Chrome-style dropdown / dropup / context menus, toolbar-style
+popups, a corner launcher, modals, and toasts** — all under a `TabSageUI` global.
+No build step, no dependencies, no network.
+
+It's published on GitHub Releases (tags named `ui-v*`). Drop the file into your
+extension folder and list it **before** your script:
+
+```json
+"content_scripts": [
+  { "matches": ["<all_urls>"], "js": ["tabsage-ui.js", "content.js"] }
+]
+```
+
+```js
+// content.js — a themed corner button whose menu opens upward
+TabSageUI.launcher({
+  label: "My Ext",
+  icon: "sparkle",
+  corner: "bottom-right",
+  menu: [
+    { label: "Summarize", icon: "sparkle", onClick: () => TabSageUI.toast("Done", { variant: "ok" }) },
+    "separator",
+    { label: "Remove", icon: "trash", danger: true, onClick: () => {} },
+  ],
+});
+```
+
+Get it with the CLI (`npx @tabsage/cli ui add extensions/my-ext`, or
+`--version ui-v1.0.0` to pin), scaffold a new extension already wired for it with
+`--ui`, or download `tabsage-ui.min.js` from a
+[release](https://github.com/Spyxpo/tabsage-extensions/releases) by hand. The
+file self-injects its stylesheet and follows the OS light/dark setting. The
+`ui-kit-demo` extension is a full working example. See
+[ui-kit/README.md](ui-kit/README.md) and
+[DEVELOP.md → UI Kit](DEVELOP.md#ui-kit) for the complete component reference.
 
 ## The tabsage API
 

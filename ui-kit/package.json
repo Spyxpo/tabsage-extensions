@@ -1,0 +1,12 @@
+{
+  "name": "@tabsage/ui",
+  "version": "1.0.0",
+  "description": "Tab Sage UI Kit — a drop-in UI/UX framework for Tab Sage extensions (tokens, themes, buttons, Chrome-style dropdown/dropup/context menus, popups and more).",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/Spyxpo/tabsage-extensions",
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}

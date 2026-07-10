@@ -19,6 +19,7 @@ extension working, and how to test and submit it. For a shorter overview see
   - [`cutout`](#cutout)
 - [Seeing your extension work](#seeing-your-extension-work)
 - [UI placement](#ui-placement)
+- [The UI Kit](#ui-kit)
 - [Security & privacy](#security--privacy)
 - [Testing locally](#testing-locally)
 - [A complete example](#a-complete-example)
@@ -309,6 +310,127 @@ different corners so they don't collide:
 
 Prefix your element ids/classes (e.g. `ts-myext-…`) so they don't clash with the
 page or other extensions.
+
+## UI Kit
+
+Building UI from raw DOM is fine for a single button, but it won't match Tab
+Sage and it's a lot of CSS. The **Tab Sage UI Kit** is a drop-in framework that
+reproduces Tab Sage's tokens, system fonts, and light/dark themes and gives you
+ready-made components — including the Chrome-style **dropdown / dropup / context
+menus** and **toolbar-style popups** most extensions want.
+
+It's a single vendored file with no build step, no dependencies, and no network:
+everything is exposed on a `TabSageUI` global, styles are injected automatically
+and scoped under a `.ts-ui` class so they never leak onto the page, and the theme
+follows the OS light/dark setting on its own.
+
+### Install (via GitHub Releases)
+
+The kit ships as release assets on tags named `ui-v*`. Three ways to get it:
+
+```bash
+# 1. Scaffold a new extension already wired for the kit
+./create.sh --id my-ext --name "My Ext" --description "…" --author "You" --ui
+npx @tabsage/cli new my-ext --author "You" --ui
+
+# 2. Add it to an existing extension folder (pins the latest ui-v* release)
+npx @tabsage/cli ui add extensions/my-ext
+npx @tabsage/cli ui add extensions/my-ext --version ui-v1.0.0
+
+# 3. By hand: download tabsage-ui.min.js from a release and save it as
+#    extensions/my-ext/tabsage-ui.js
+```
+
+Then list it **before** your own script so `TabSageUI` exists when it runs:
+
+```json
+"content_scripts": [
+  { "matches": ["<all_urls>"], "js": ["tabsage-ui.js", "content.js"] }
+]
+```
+
+Pin a specific `ui-v*` version and re-vendor deliberately (`tabsage ui update`) —
+the file lives in your extension folder, so nothing changes under you. Because a
+vendored `tabsage-ui.js` sits inside your own `extensions/<id>/` folder and is
+referenced from your manifest, it passes the PR check like any other file.
+
+### A minimal UI Kit extension
+
+```js
+(function () {
+  if (window.__myExtRan) return;
+  window.__myExtRan = true;
+  if (typeof TabSageUI === "undefined") return;
+
+  // A themed floating button; in a bottom corner its menu opens upward.
+  TabSageUI.launcher({
+    label: "My Ext",
+    icon: "sparkle",
+    corner: "bottom-right",
+    menu: [
+      { label: "Do it", icon: "sparkle", onClick: () => TabSageUI.toast("Done", { variant: "ok" }) },
+      { label: "Settings", icon: "settings", onClick: () => {} },
+      "separator",
+      { label: "Remove", icon: "trash", danger: true, onClick: () => {} },
+    ],
+  });
+})();
+```
+
+### Components
+
+Overlays and the launcher theme themselves; place primitives inside a
+`TabSageUI.root()` container, a popup body, or a modal.
+
+#### Theme
+
+| Call | Effect |
+| --- | --- |
+| `TabSageUI.setTheme("light" \| "dark" \| "auto")` | Force a theme or follow the OS (`auto`, default). |
+| `TabSageUI.getTheme()` | Current mode. |
+| `TabSageUI.root(extraClass?)` | A themed `.ts-ui` container to fill. |
+
+#### Primitives
+
+Each returns a DOM node.
+
+| Call | Notes |
+| --- | --- |
+| `button({ label, variant, icon, onClick, disabled, title })` | `variant`: `primary` / `ghost` / `danger`. |
+| `iconButton({ icon, title, onClick, variant })` | 32×32; `variant`: `active` / `accent`. |
+| `input({ placeholder, value, type, onInput, onEnter })` · `textarea({ … })` | |
+| `switch({ label, checked, onChange })` | Alias `toggle`. `.tsGet()` / `.tsSet(v)`. |
+| `select({ options, value, onChange })` | `options: {value,label}[]`. `.tsGet()` / `.tsSet(v)`. |
+| `card({ title, children })` · `chip({ label, status })` · `badge(text)` | `status`: `ok` / `warn` / `danger`. |
+| `icon(name)` | e.g. `sparkle, settings, search, send, trash, copy, check, close, chevron-down, info, alert, lock, puzzle`. |
+
+#### Menus (dropdown, dropup, context)
+
+All three come from one call.
+
+| Call | Notes |
+| --- | --- |
+| `menu({ items, anchor, placement })` | `placement`: `auto` / `down` / `up`. `auto` flips to a **dropup** near the viewport bottom, and right-aligns near the edge. Returns `{ el, close }`. |
+| `dropdown(triggerEl, items)` / `dropup(triggerEl, items)` | Force direction. |
+| `contextMenu(elOrEvent, items)` | Use from a `contextmenu` handler. |
+
+Item: `{ label, icon?, onClick?, danger?, disabled?, shortcut?, keepOpen? }`, the
+string `"separator"`, or `{ heading: true, label }`.
+
+#### Overlays
+
+| Call | Notes |
+| --- | --- |
+| `popup({ anchor, title, content, footer, width, placement })` | Toolbar-style panel anchored to a button. Returns `{ el, body, close }`. |
+| `launcher({ label, icon, corner, menu \| popup, onClick })` | Floating corner button. `corner`: `top-left` / `top-right` / `bottom-left` / `bottom-right` / `bottom-center`. Pass `menu` (items array) or `popup` (config object, or a function returning one); clicking toggles it. |
+| `modal({ title, body, actions })` | `actions: { label, variant?, onClick?, close? }[]`. Dismiss on scrim click or Esc. |
+| `toast(message, { variant, timeout })` · `tooltip(el, label)` | |
+
+Prefer writing markup? The same styles are available as classes under a `.ts-ui`
+root (`ts-btn`, `ts-menu`, `ts-popup`, …) using the `--ts-*` tokens; ship
+`tabsage-ui.css` alongside if you use classes without the JS. Full reference:
+[ui-kit/README.md](ui-kit/README.md). Working example: the `ui-kit-demo`
+extension.
 
 ## Security & privacy
 

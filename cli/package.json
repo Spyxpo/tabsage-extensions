@@ -1,0 +1,17 @@
+{
+  "name": "@tabsage/cli",
+  "version": "1.0.0",
+  "description": "Tab Sage extension CLI — scaffold extensions and vendor the Tab Sage UI Kit.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/Spyxpo/tabsage-extensions",
+  "bin": {
+    "tabsage": "tabsage.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "tabsage.mjs"
+  ]
+}

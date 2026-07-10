@@ -25,10 +25,12 @@ set "HOMEPAGE="
 set "PERMISSIONS="
 set "MATCHES="
 set "RUN_AT="
+set "WITH_UI=0"
 
 rem --- parse flags ------------------------------------------------------------
 :parseargs
 if "%~1"=="" goto afterargs
+if "%~1"=="--ui" ( set "WITH_UI=1" & shift & goto parseargs )
 if "%~1"=="--id" ( set "ID=%~2" & shift & shift & goto parseargs )
 if "%~1"=="--name" ( set "NAME=%~2" & shift & shift & goto parseargs )
 if "%~1"=="--description" ( set "DESCRIPTION=%~2" & shift & shift & goto parseargs )
@@ -50,9 +52,12 @@ echo.
 echo Usage (flags, any omitted are prompted for):
 echo   create.bat --id my-ext --name "My Ext" --description "Does a thing." ^^
 echo              --author "You" [--homepage URL] [--permissions content_scripts,storage] ^^
-echo              [--matches "^<all_urls^>"] [--run-at document_end]
+echo              [--matches "^<all_urls^>"] [--run-at document_end] [--ui]
 echo.
 echo Or just run create.bat with no arguments to be prompted for everything.
+echo.
+echo --ui pre-wires the Tab Sage UI Kit (vendors ui-kit\dist\tabsage-ui.min.js and
+echo gives you a TabSageUI starter content.js).
 echo.
 echo The valid permissions are: content_scripts (required), storage, ai, tabs, notifications, dialogs, adblock, cutout.
 exit /b 0
@@ -117,6 +122,17 @@ call :write_manifest
 call :write_content
 call :write_style
 call :write_readme
+
+rem Vendor the UI kit so the extension is self-contained (no build, no CDN).
+if "%WITH_UI%"=="1" (
+  if exist "%repo_root%\ui-kit\dist\tabsage-ui.min.js" (
+    copy /y "%repo_root%\ui-kit\dist\tabsage-ui.min.js" "%dest%\tabsage-ui.js" >nul
+    echo Vendored tabsage-ui.js into %dest%
+  ) else (
+    echo Note: ui-kit\dist\tabsage-ui.min.js not found. Build it with 'node ui-kit\build.mjs',>&2
+    echo       or fetch a release with 'tabsage ui add %dest%'.>&2
+  )
+)
 
 echo Created %dest%
 echo.
@@ -188,7 +204,7 @@ echo   "permissions": !perms_json!,>>"!f!"
 echo   "content_scripts": [>>"!f!"
 echo     {>>"!f!"
 echo       "matches": ["!MATCHES!"],>>"!f!"
-echo       "js": ["content.js"],>>"!f!"
+if "%WITH_UI%"=="1" (echo       "js": ["tabsage-ui.js", "content.js"],>>"!f!") else (echo       "js": ["content.js"],>>"!f!")
 echo       "css": ["style.css"],>>"!f!"
 echo       "run_at": "!RUN_AT!">>"!f!"
 echo     }>>"!f!"
@@ -200,6 +216,7 @@ exit /b 0
 :write_content
 setlocal DisableDelayedExpansion
 set "f=%dest%\content.js"
+if "%WITH_UI%"=="1" goto write_content_ui
 echo // %NAME% — %DESCRIPTION%>"%f%"
 echo (function () {>>"%f%"
 echo   // Content scripts can run more than once per page (e.g. after in-page>>"%f%"
@@ -217,6 +234,29 @@ echo   //   if (typeof tabsage !== "undefined" ^&^& tabsage.ai) { ... }>>"%f%"
 echo   // Groups: tabsage.storage, tabsage.ai (chat/prompt), tabsage.tabs,>>"%f%"
 echo   // tabsage.notify, tabsage.dialog, tabsage.adblock, tabsage.cutout.>>"%f%"
 echo   // See README.md and DEVELOP.md for the full reference and examples.>>"%f%"
+echo })();>>"%f%"
+endlocal
+exit /b 0
+
+:write_content_ui
+echo // %NAME% — %DESCRIPTION%>"%f%"
+echo (function () {>>"%f%"
+echo   if (window.%guard%) return;>>"%f%"
+echo   window.%guard% = true;>>"%f%"
+echo   if (typeof TabSageUI === "undefined") return; // tabsage-ui.js loads first>>"%f%"
+echo(>>"%f%"
+echo   // A Tab Sage-styled corner button that opens a menu. See DEVELOP.md -^> UI Kit.>>"%f%"
+echo   TabSageUI.launcher({>>"%f%"
+echo     label: "%NAME%",>>"%f%"
+echo     icon: "sparkle",>>"%f%"
+echo     corner: "bottom-right",>>"%f%"
+echo     menu: [>>"%f%"
+echo       { label: "Do something", icon: "sparkle", onClick: function () {>>"%f%"
+echo         TabSageUI.toast("Hello from %NAME%", { variant: "ok" });>>"%f%"
+echo       } },>>"%f%"
+echo       { label: "Settings", icon: "settings", onClick: function () {} },>>"%f%"
+echo     ],>>"%f%"
+echo   });>>"%f%"
 echo })();>>"%f%"
 endlocal
 exit /b 0

@@ -1,0 +1,16 @@
+{
+  "id": "ui-kit-demo",
+  "name": "UI Kit Demo",
+  "version": "1.0.0",
+  "description": "Showcases the Tab Sage UI Kit: a themed corner launcher, popup, dropdown/dropup menu, switch, and toast.",
+  "author": "Spyxpo",
+  "homepage": "https://github.com/Spyxpo/tabsage-extensions",
+  "permissions": ["content_scripts"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["tabsage-ui.js", "content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}

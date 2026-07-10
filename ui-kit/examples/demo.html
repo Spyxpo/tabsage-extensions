@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tab Sage UI Kit — demo</title>
+    <style>
+      /* Page chrome only — the kit styles itself. */
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #f6f7f9;
+        color: #14161a;
+      }
+      body[data-page="dark"] {
+        background: #0f1115;
+        color: #e7e9ee;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 24px;
+        border-bottom: 1px solid rgba(128, 128, 128, 0.25);
+      }
+      header h1 {
+        font-size: 16px;
+        margin: 0;
+        flex: 1;
+      }
+      header button {
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(128, 128, 128, 0.35);
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 24px;
+        display: grid;
+        gap: 16px;
+      }
+      section > h2 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        opacity: 0.6;
+        margin: 0 0 8px;
+      }
+      .demo-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Tab Sage UI Kit — component demo</h1>
+      <button id="light">Light</button>
+      <button id="dark">Dark</button>
+      <button id="auto">Auto</button>
+    </header>
+    <main id="app"></main>
+
+    <script src="../dist/tabsage-ui.js"></script>
+    <script>
+      var U = TabSageUI;
+      var app = document.getElementById("app");
+
+      function section(title, nodes) {
+        var s = document.createElement("section");
+        var h = document.createElement("h2");
+        h.textContent = title;
+        s.appendChild(h);
+        var root = U.root(); // themed .ts-ui container
+        var row = document.createElement("div");
+        row.className = "demo-row";
+        nodes.forEach(function (n) {
+          row.appendChild(n);
+        });
+        root.appendChild(row);
+        s.appendChild(root);
+        app.appendChild(s);
+      }
+
+      // Buttons
+      section("Buttons", [
+        U.button({ label: "Default" }),
+        U.button({ label: "Primary", variant: "primary", icon: "sparkle" }),
+        U.button({ label: "Ghost", variant: "ghost" }),
+        U.button({ label: "Danger", variant: "danger", icon: "trash" }),
+        U.iconButton({ icon: "settings", title: "Settings" }),
+        U.iconButton({ icon: "search", title: "Search", variant: "active" }),
+      ]);
+
+      // Inputs + switch + select
+      var sw = U.switch({ label: "Enabled", checked: true });
+      var sel = U.select({
+        options: [
+          { value: "a", label: "Concise" },
+          { value: "b", label: "Detailed" },
+          { value: "c", label: "Bullet points" },
+        ],
+        value: "a",
+      });
+      section("Inputs", [
+        U.input({ placeholder: "Type here…" }),
+        sw,
+        sel,
+      ]);
+
+      // Chips + badges
+      section("Chips & badges", [
+        U.chip({ label: "Ready", status: "ok" }),
+        U.chip({ label: "Warning", status: "warn" }),
+        U.chip({ label: "Blocked", status: "danger" }),
+        U.badge("New"),
+      ]);
+
+      // Overlays
+      var menuBtn = U.button({ label: "Dropdown ▾", variant: "primary" });
+      menuBtn.addEventListener("click", function () {
+        U.dropdown(menuBtn, [
+          { label: "Summarize page", icon: "sparkle", onClick: noop },
+          { label: "Copy text", icon: "copy", onClick: noop },
+          "separator",
+          { label: "Remove", icon: "trash", danger: true, onClick: noop },
+        ]);
+      });
+
+      var popBtn = U.button({ label: "Popup panel" });
+      popBtn.addEventListener("click", function () {
+        var root = U.root();
+        root.appendChild(U.input({ placeholder: "Ask about this page…" }));
+        var send = U.button({ label: "Send", variant: "primary", icon: "send" });
+        U.popup({
+          anchor: popBtn,
+          title: "Page assistant",
+          content: root,
+          footer: [send],
+        });
+      });
+
+      var modalBtn = U.button({ label: "Modal" });
+      modalBtn.addEventListener("click", function () {
+        U.modal({
+          title: "Delete note?",
+          body: "This can't be undone.",
+          actions: [
+            { label: "Cancel", variant: "ghost" },
+            { label: "Delete", variant: "danger", onClick: noop },
+          ],
+        });
+      });
+
+      var toastBtn = U.button({ label: "Toast" });
+      toastBtn.addEventListener("click", function () {
+        U.toast("Saved to Tab Sage", { variant: "ok" });
+      });
+
+      var ctxBtn = U.button({ label: "Right-click me" });
+      ctxBtn.addEventListener("contextmenu", function (e) {
+        U.contextMenu(e, [
+          { label: "Cut", onClick: noop },
+          { label: "Copy", icon: "copy", onClick: noop },
+          { label: "Paste", onClick: noop },
+        ]);
+      });
+
+      section("Overlays", [menuBtn, popBtn, modalBtn, toastBtn, ctxBtn]);
+
+      // A corner launcher (bottom-right → its menu drops UP automatically)
+      U.launcher({
+        label: "UI Kit",
+        icon: "puzzle",
+        corner: "bottom-right",
+        menu: [
+          { label: "Do a thing", icon: "sparkle", onClick: noop },
+          { label: "Settings", icon: "settings", onClick: noop },
+          "separator",
+          { label: "Hide", icon: "close", onClick: noop },
+        ],
+      });
+
+      function noop() {}
+
+      document.getElementById("light").onclick = function () {
+        U.setTheme("light");
+        document.body.dataset.page = "light";
+      };
+      document.getElementById("dark").onclick = function () {
+        U.setTheme("dark");
+        document.body.dataset.page = "dark";
+      };
+      document.getElementById("auto").onclick = function () {
+        U.setTheme("auto");
+        document.body.removeAttribute("data-page");
+      };
+    </script>
+  </body>
+</html>

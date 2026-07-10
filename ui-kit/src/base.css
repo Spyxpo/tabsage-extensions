@@ -1,0 +1,72 @@
+/* ──────────────────────────────────────────────────────────────────────────
+ *  Tab Sage UI Kit — base / reset
+ *
+ *  Everything is scoped under `.ts-ui`. The kit deliberately resets only inside
+ *  its own subtree so it stays a good citizen on whatever page it lands on.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+.ts-ui,
+.ts-ui * {
+  box-sizing: border-box;
+}
+
+.ts-ui {
+  font-family: var(--ts-font-ui);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ts-fg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Overlay roots (menus, popups, toasts, modals) float above everything. */
+.ts-ui.ts-layer {
+  position: fixed;
+  z-index: 2147483000;
+}
+
+.ts-ui button,
+.ts-ui input,
+.ts-ui textarea,
+.ts-ui select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+.ts-ui a {
+  color: var(--ts-accent);
+  text-decoration: none;
+}
+.ts-ui a:hover {
+  text-decoration: underline;
+}
+
+.ts-ui :focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ts-accent-soft);
+}
+
+.ts-ui .ts-mono {
+  font-family: var(--ts-font-mono);
+}
+.ts-ui .ts-muted {
+  color: var(--ts-fg-muted);
+}
+.ts-ui .ts-faint {
+  color: var(--ts-fg-faint);
+}
+.ts-ui .ts-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ts-ui .ts-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ts-ui .ts-grow {
+  flex: 1 1 auto;
+}

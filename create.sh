@@ -4,9 +4,13 @@
 # Usage (flags, any omitted are prompted for):
 #   ./create.sh --id my-ext --name "My Ext" --description "Does a thing." \
 #               --author "You" [--homepage URL] [--permissions content_scripts,storage] \
-#               [--matches "<all_urls>"] [--run-at document_end]
+#               [--matches "<all_urls>"] [--run-at document_end] [--ui]
 #
 # Or just run ./create.sh with no arguments to be prompted for everything.
+#
+# --ui pre-wires the Tab Sage UI Kit: it vendors ui-kit/dist/tabsage-ui.min.js
+# into the new folder, lists it first in the manifest, and gives you a starter
+# content.js that uses TabSageUI (a themed launcher + menu).
 #
 # The valid permissions are: content_scripts (required), storage, ai, tabs, notifications, dialogs, adblock, cutout.
 set -euo pipefail
@@ -17,7 +21,7 @@ ext_root="$repo_root/extensions"
 # Left empty so every manifest field is prompted for when not passed as a flag.
 # The defaults live in the prompt calls below.
 ID="" NAME="" DESCRIPTION="" AUTHOR="" HOMEPAGE=""
-PERMISSIONS="" MATCHES="" RUN_AT=""
+PERMISSIONS="" MATCHES="" RUN_AT="" WITH_UI=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -29,6 +33,7 @@ while [ $# -gt 0 ]; do
     --permissions|--perms) PERMISSIONS="$2"; shift 2 ;;
     --matches) MATCHES="$2"; shift 2 ;;
     --run-at) RUN_AT="$2"; shift 2 ;;
+    --ui) WITH_UI=1; shift ;;
     -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
@@ -101,6 +106,13 @@ case "$RUN_AT" in
   *) echo "Error: run-at must be document_start or document_end." >&2; exit 1 ;;
 esac
 
+# The UI kit (if requested) must load before content.js.
+if [ "$WITH_UI" -eq 1 ]; then
+  js_json='"tabsage-ui.js", "content.js"'
+else
+  js_json='"content.js"'
+fi
+
 # --- write files ------------------------------------------------------------
 mkdir -p "$dest"
 
@@ -119,7 +131,7 @@ cat > "$dest/manifest.json" <<JSON
   "content_scripts": [
     {
       "matches": ["$MATCHES"],
-      "js": ["content.js"],
+      "js": [$js_json],
       "css": ["style.css"],
       "run_at": "$RUN_AT"
     }
@@ -129,6 +141,34 @@ JSON
 
 # CamelCase the id for a unique window guard flag (portable across BSD/GNU awk).
 guard="__ts$(printf '%s' "$ID" | awk -F- '{s="";for(i=1;i<=NF;i++)s=s toupper(substr($i,1,1)) substr($i,2);print s}')"
+if [ "$WITH_UI" -eq 1 ]; then
+cat > "$dest/content.js" <<JS
+// $NAME — $DESCRIPTION
+(function () {
+  if (window.$guard) return;
+  window.$guard = true;
+  if (typeof TabSageUI === "undefined") return; // tabsage-ui.js loads first
+
+  // A Tab Sage-styled corner button that opens a menu. See DEVELOP.md → UI Kit
+  // for buttons, popups, dropdown/dropup/context menus, modals, toasts, etc.
+  TabSageUI.launcher({
+    label: "$NAME",
+    icon: "sparkle",
+    corner: "bottom-right",
+    menu: [
+      {
+        label: "Do something",
+        icon: "sparkle",
+        onClick: function () {
+          TabSageUI.toast("Hello from $NAME", { variant: "ok" });
+        },
+      },
+      { label: "Settings", icon: "settings", onClick: function () {} },
+    ],
+  });
+})();
+JS
+else
 cat > "$dest/content.js" <<JS
 // $NAME — $DESCRIPTION
 (function () {
@@ -149,6 +189,7 @@ cat > "$dest/content.js" <<JS
   // See README.md and DEVELOP.md for the full reference and examples.
 })();
 JS
+fi
 
 cat > "$dest/style.css" <<CSS
 /* Styles for $NAME. Keep selectors specific so you don't affect the host page. */
@@ -172,6 +213,18 @@ $(printf '%s' "$PERMISSIONS")
 
 - 1.0.0 — Initial release.
 MD
+
+# Vendor the UI kit so the extension is self-contained (no build, no CDN).
+if [ "$WITH_UI" -eq 1 ]; then
+  kit_src="$repo_root/ui-kit/dist/tabsage-ui.min.js"
+  if [ -f "$kit_src" ]; then
+    cp "$kit_src" "$dest/tabsage-ui.js"
+    echo "Vendored tabsage-ui.js into $dest"
+  else
+    echo "Note: $kit_src not found. Build it with 'node ui-kit/build.mjs'," >&2
+    echo "      or fetch a release with 'tabsage ui add $dest'." >&2
+  fi
+fi
 
 echo "Created $dest"
 echo

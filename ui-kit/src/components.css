@@ -1,0 +1,580 @@
+/* ──────────────────────────────────────────────────────────────────────────
+ *  Tab Sage UI Kit — components
+ *
+ *  Ports of Tab Sage's own `ll-*` component styles, renamed to `ts-*` and
+ *  scoped under `.ts-ui`. Shapes/spacing/motion match the app so an extension's
+ *  UI reads as part of Tab Sage.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.ts-ui .ts-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--ts-fg);
+  background: var(--ts-bg-elev);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-md);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background var(--ts-transition),
+    border-color var(--ts-transition),
+    color var(--ts-transition),
+    transform var(--ts-transition);
+}
+.ts-ui .ts-btn:hover {
+  border-color: var(--ts-border-strong);
+}
+.ts-ui .ts-btn:active {
+  transform: translateY(0.5px);
+}
+.ts-ui .ts-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ts-ui .ts-btn svg {
+  width: 16px;
+  height: 16px;
+}
+.ts-ui .ts-btn--primary {
+  color: var(--ts-accent-fg);
+  background: var(--ts-accent);
+  border-color: transparent;
+}
+.ts-ui .ts-btn--primary:hover {
+  filter: brightness(1.05);
+  border-color: transparent;
+}
+.ts-ui .ts-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+}
+.ts-ui .ts-btn--ghost:hover {
+  background: var(--ts-bg-subtle);
+  border-color: transparent;
+}
+.ts-ui .ts-btn--danger {
+  color: #fff;
+  background: var(--ts-danger);
+  border-color: transparent;
+}
+.ts-ui .ts-btn--danger:hover {
+  filter: brightness(1.05);
+  border-color: transparent;
+}
+
+/* Icon button (square) */
+.ts-ui .ts-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--ts-fg);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--ts-radius-md);
+  cursor: pointer;
+  transition:
+    background var(--ts-transition),
+    color var(--ts-transition);
+}
+.ts-ui .ts-iconbtn:hover {
+  background: var(--ts-bg-subtle);
+}
+.ts-ui .ts-iconbtn svg {
+  width: 18px;
+  height: 18px;
+}
+.ts-ui .ts-iconbtn--active {
+  color: var(--ts-accent);
+  background: var(--ts-accent-soft);
+}
+.ts-ui .ts-iconbtn--accent {
+  color: var(--ts-accent-fg);
+  background: var(--ts-accent);
+}
+
+/* ── Inputs ───────────────────────────────────────────────────────────────── */
+.ts-ui .ts-input,
+.ts-ui .ts-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--ts-fg);
+  background: var(--ts-bg-elev);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-md);
+  transition:
+    border-color var(--ts-transition),
+    box-shadow var(--ts-transition);
+}
+.ts-ui .ts-textarea {
+  min-height: 72px;
+  resize: vertical;
+  line-height: 1.45;
+}
+.ts-ui .ts-input::placeholder,
+.ts-ui .ts-textarea::placeholder {
+  color: var(--ts-fg-faint);
+}
+.ts-ui .ts-input:focus,
+.ts-ui .ts-textarea:focus {
+  outline: none;
+  border-color: var(--ts-accent);
+  box-shadow: 0 0 0 3px var(--ts-accent-soft);
+}
+.ts-ui .ts-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ts-ui .ts-field__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ts-fg-muted);
+}
+
+/* ── Cards / panels ───────────────────────────────────────────────────────── */
+.ts-ui .ts-card {
+  padding: 14px;
+  background: var(--ts-bg-elev);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-lg);
+  box-shadow: var(--ts-shadow-1);
+}
+.ts-ui .ts-card--muted {
+  background: var(--ts-bg-subtle);
+}
+.ts-ui .ts-card__title {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ts-fg-muted);
+}
+.ts-ui .ts-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Chips / badges ───────────────────────────────────────────────────────── */
+.ts-ui .ts-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: var(--ts-fg-muted);
+  background: var(--ts-bg-subtle);
+  border: 1px solid var(--ts-border);
+  border-radius: 999px;
+}
+.ts-ui .ts-chip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ts-fg-faint);
+}
+.ts-ui .ts-chip__dot.is-ok {
+  background: var(--ts-ok);
+}
+.ts-ui .ts-chip__dot.is-warn {
+  background: var(--ts-warn);
+}
+.ts-ui .ts-chip__dot.is-danger {
+  background: var(--ts-danger);
+}
+.ts-ui .ts-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ts-accent);
+  background: var(--ts-accent-soft);
+  border-radius: 999px;
+}
+
+/* ── Switch / toggle ──────────────────────────────────────────────────────── */
+.ts-ui .ts-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+}
+.ts-ui .ts-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.ts-ui .ts-switch__track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 20px;
+  background: var(--ts-bg-subtle);
+  border: 1px solid var(--ts-border);
+  border-radius: 999px;
+  transition:
+    background var(--ts-transition),
+    border-color var(--ts-transition);
+}
+.ts-ui .ts-switch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: var(--ts-bg-elev);
+  border-radius: 999px;
+  box-shadow: var(--ts-shadow-1);
+  transition: left var(--ts-transition);
+}
+.ts-ui .ts-switch input:checked + .ts-switch__track {
+  background: var(--ts-accent-soft);
+  border-color: var(--ts-accent);
+}
+.ts-ui .ts-switch input:checked + .ts-switch__track .ts-switch__thumb {
+  left: 18px;
+  background: var(--ts-accent);
+}
+.ts-ui .ts-switch input:focus-visible + .ts-switch__track {
+  box-shadow: 0 0 0 3px var(--ts-accent-soft);
+}
+
+/* ── Select (custom listbox) ──────────────────────────────────────────────── */
+.ts-ui .ts-select {
+  position: relative;
+  display: inline-block;
+}
+.ts-ui .ts-select__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 140px;
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--ts-fg);
+  background: var(--ts-bg-elev);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-md);
+  cursor: pointer;
+}
+.ts-ui .ts-select__btn:hover {
+  border-color: var(--ts-border-strong);
+}
+.ts-ui .ts-select__btn svg {
+  width: 16px;
+  height: 16px;
+  color: var(--ts-fg-faint);
+}
+
+/* ── Menus (dropdown / dropup / context) ──────────────────────────────────── */
+.ts-ui.ts-menu,
+.ts-ui .ts-menu {
+  min-width: 180px;
+  max-width: 320px;
+  padding: 6px;
+  background: var(--ts-bg-elev);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-md);
+  box-shadow: var(--ts-shadow-2);
+  animation: ts-fade 120ms ease;
+}
+.ts-ui .ts-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--ts-fg);
+  background: transparent;
+  border: 0;
+  border-radius: var(--ts-radius-sm);
+  text-align: left;
+  cursor: pointer;
+}
+.ts-ui .ts-menu__item:hover,
+.ts-ui .ts-menu__item.is-active {
+  background: var(--ts-bg-subtle);
+}
+.ts-ui .ts-menu__item svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--ts-fg-muted);
+}
+.ts-ui .ts-menu__item--danger {
+  color: var(--ts-danger);
+}
+.ts-ui .ts-menu__item--danger svg {
+  color: var(--ts-danger);
+}
+.ts-ui .ts-menu__item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.ts-ui .ts-menu__sep {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--ts-border);
+}
+.ts-ui .ts-menu__label {
+  padding: 6px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ts-fg-faint);
+}
+
+/* ── Popup panel (Chrome toolbar-popup analog) ────────────────────────────── */
+.ts-ui.ts-popup {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  background: var(--ts-bg-elev);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-lg);
+  box-shadow: var(--ts-shadow-2);
+  overflow: hidden;
+  animation: ts-fade 120ms ease;
+}
+.ts-ui .ts-popup__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--ts-border);
+}
+.ts-ui .ts-popup__title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.ts-ui .ts-popup__body {
+  padding: 14px;
+  overflow-y: auto;
+}
+.ts-ui .ts-popup__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--ts-border);
+}
+
+/* ── Modal ────────────────────────────────────────────────────────────────── */
+.ts-ui.ts-modal-scrim {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.5);
+  animation: ts-fade 120ms ease;
+}
+.ts-ui .ts-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 92vw);
+  max-height: min(720px, 88vh);
+  background: var(--ts-bg-elev);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-lg);
+  box-shadow: var(--ts-shadow-2);
+  overflow: hidden;
+}
+.ts-ui .ts-modal__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ts-border);
+}
+.ts-ui .ts-modal__title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.ts-ui .ts-modal__body {
+  padding: 16px;
+  overflow-y: auto;
+  color: var(--ts-fg);
+}
+.ts-ui .ts-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--ts-border);
+}
+
+/* ── Toast ────────────────────────────────────────────────────────────────── */
+.ts-ui.ts-toast-wrap {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+.ts-ui .ts-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 360px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--ts-fg);
+  background: var(--ts-bg-elev);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-md);
+  box-shadow: var(--ts-shadow-2);
+  pointer-events: auto;
+  animation: ts-fade 140ms ease;
+}
+.ts-ui .ts-toast__dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--ts-accent);
+}
+.ts-ui .ts-toast--ok .ts-toast__dot {
+  background: var(--ts-ok);
+}
+.ts-ui .ts-toast--warn .ts-toast__dot {
+  background: var(--ts-warn);
+}
+.ts-ui .ts-toast--danger .ts-toast__dot {
+  background: var(--ts-danger);
+}
+
+/* ── Tooltip ──────────────────────────────────────────────────────────────── */
+.ts-ui.ts-tooltip {
+  padding: 5px 9px;
+  font-size: 12px;
+  color: var(--ts-bg-elev);
+  background: var(--ts-fg);
+  border-radius: var(--ts-radius-sm);
+  box-shadow: var(--ts-shadow-2);
+  animation: ts-fade 100ms ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ── Launcher (floating corner FAB) ───────────────────────────────────────── */
+.ts-ui.ts-launcher {
+  position: fixed;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ts-accent-fg);
+  background: var(--ts-accent);
+  border: 0;
+  border-radius: 999px;
+  box-shadow: var(--ts-shadow-2);
+  cursor: pointer;
+  transition:
+    filter var(--ts-transition),
+    transform var(--ts-transition);
+}
+.ts-ui.ts-launcher:hover {
+  filter: brightness(1.06);
+}
+.ts-ui.ts-launcher:active {
+  transform: translateY(0.5px);
+}
+.ts-ui.ts-launcher svg {
+  width: 18px;
+  height: 18px;
+}
+.ts-ui.ts-launcher--icononly {
+  padding: 0;
+  width: 44px;
+  height: 44px;
+  justify-content: center;
+}
+
+/* ── Loading ──────────────────────────────────────────────────────────────── */
+.ts-ui .ts-spin {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--ts-border);
+  border-top-color: var(--ts-accent);
+  border-radius: 999px;
+  animation: ts-spin 700ms linear infinite;
+}
+.ts-ui .ts-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+.ts-ui .ts-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ts-fg-faint);
+  animation: ts-dot 1s ease-in-out infinite;
+}
+.ts-ui .ts-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.ts-ui .ts-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes ts-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes ts-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ts-dot {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}

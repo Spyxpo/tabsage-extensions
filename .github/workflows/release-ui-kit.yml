@@ -1,0 +1,100 @@
+name: Release UI Kit
+
+# Publishes a GitHub Release for the Tab Sage UI Kit. Push a tag like `ui-v1.2.0`
+# (or run this workflow manually with a version) and it builds ui-kit/dist and
+# attaches the single-file artifacts so extension authors can vendor a pinned
+# version. Independent of the extension-PR validation workflow.
+on:
+  push:
+    tags:
+      - "ui-v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, e.g. ui-v1.2.0 (creates/uses this tag)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build UI Kit
+        run: node ui-kit/build.mjs
+
+      - name: Package zip
+        run: |
+          cd ui-kit/dist
+          zip -j "tabsage-ui.zip" tabsage-ui.js tabsage-ui.min.js tabsage-ui.css tabsage-ui.min.css
+
+      - name: Create tag (manual runs only)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          NOTES="$(cat <<EOF
+          ## Tab Sage UI Kit \`$TAG\`
+
+          Drop-in UI/UX framework for Tab Sage extensions — Tab Sage's tokens,
+          fonts and light/dark themes plus buttons, inputs, cards, Chrome-style
+          dropdown / dropup / context menus, popups, a corner launcher, modals
+          and toasts.
+
+          ### Install (vendor into your extension)
+
+          Download **tabsage-ui.min.js** and drop it into your \`extensions/<id>/\`
+          folder, then list it first in your manifest:
+
+          \`\`\`json
+          "content_scripts": [
+            { "matches": ["<all_urls>"], "js": ["tabsage-ui.min.js", "content.js"] }
+          ]
+          \`\`\`
+
+          Or with the CLI: \`npx @tabsage/cli ui add --version $TAG\`
+
+          Direct download:
+          \`https://github.com/${{ github.repository }}/releases/download/$TAG/tabsage-ui.min.js\`
+
+          The file self-injects its stylesheet and follows the OS light/dark
+          setting. See DEVELOP.md → "UI Kit" for the full API.
+          EOF
+          )"
+          gh release create "$TAG" \
+            ui-kit/dist/tabsage-ui.js \
+            ui-kit/dist/tabsage-ui.min.js \
+            ui-kit/dist/tabsage-ui.css \
+            ui-kit/dist/tabsage-ui.min.css \
+            ui-kit/dist/tabsage-ui.zip \
+            --title "Tab Sage UI Kit $TAG" \
+            --notes "$NOTES"
