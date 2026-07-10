@@ -10,9 +10,9 @@ Because all extension source code is public, you can read exactly what an extens
 
 A Tab Sage extension is a folder containing a `manifest.json` file and the scripts and stylesheets it references. When a page loads in a normal tab, Tab Sage checks the page URL against each enabled extension's match patterns and injects the matching content scripts and CSS into the page.
 
-Extensions do not run in incognito tabs. They also cannot reach your passwords, history, bookmarks, cookies, or any of the browser's internal commands. A content script runs inside the web page, with the same access an ordinary script on that page would have, and nothing more.
+Extensions do not run in incognito tabs. They cannot reach your passwords, history, bookmarks, or cookies. A content script runs inside the web page with the same access an ordinary script on that page would have — plus, if the manifest asks for them, a small set of opt-in host capabilities through the `tabsage` API: per-extension storage, the on-device AI model, tab metadata, and notifications (see [The tabsage API](#the-tabsage-api)). Nothing else.
 
-Installing, enabling, disabling, and removing extensions happens in Settings > Extensions. The puzzle icon in the toolbar lists your installed extensions with quick enable and disable toggles and links to the same settings page. Changes take effect the next time a page loads.
+Installing, enabling, disabling, and removing extensions happens in Settings > Extensions, where you can also search installed and catalog extensions, open any extension to see its full manifest, and watch its live activity — an extension's activation and console output show up there so you can confirm it is working. The puzzle icon in the toolbar lists your installed extensions with quick enable and disable toggles and links to the same settings page. Changes take effect the next time a page loads.
 
 ## Repository layout
 
@@ -61,7 +61,7 @@ Every extension needs a `manifest.json`:
 | `description` | yes | One or two sentences describing what the extension does. |
 | `author` | yes | Your name or handle. |
 | `homepage` | no | Link to your site or profile. |
-| `permissions` | yes | What the extension needs. Currently the only supported value is `content_scripts`. |
+| `permissions` | yes | What the extension needs. `content_scripts` is required to inject anything; add `storage`, `ai`, `tabs`, and/or `notifications` to use the matching parts of the `tabsage` API (see [The tabsage API](#the-tabsage-api)). |
 | `content_scripts` | yes | Which scripts and styles run on which pages. See below. |
 
 Each entry in `content_scripts` takes:
@@ -79,7 +79,62 @@ A few practical notes:
 - Keep extensions dependency free. There is no build step. What is in the folder is what runs.
 - Each extension folder should include a `README.md` that says what the extension does, which pages it touches, and lists changes per version. Reviewers read it, and so do users deciding whether to install.
 
-The `permissions` field exists so the format can grow. Storage, tab information, and bookmark read access are planned but not implemented yet. A manifest that requests an unknown permission is rejected at install time.
+A manifest that requests an unknown permission is rejected at install time, so an older browser never silently ignores a capability your extension depends on.
+
+## The tabsage API
+
+Inside a content script your code gets a `tabsage` object with the capabilities your manifest asked for. Each capability is a permission you add to `permissions` alongside `content_scripts`. If you don't request a permission, that part of the API is simply absent, so feature-detect before you call:
+
+```js
+if (tabsage.storage) {
+  await tabsage.storage.set("seen", "1");
+}
+```
+
+Every method returns a Promise. All data stays on the device.
+
+### `storage` — per-extension key/value
+
+A small persistent store, namespaced to your extension id and scoped to the active profile. Values are strings (stringify your own JSON). Survives reloads and restarts.
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `tabsage.storage.get(key)` | `string \| null` | The stored value, or null. |
+| `tabsage.storage.set(key, value)` | `void` | Value must be a string ≤ 64 KB. |
+| `tabsage.storage.remove(key)` | `void` | |
+| `tabsage.storage.keys()` | `string[]` | All keys you've stored. |
+
+### `ai` — the on-device model
+
+Prompt the same local model that powers Tab Sage's assistant. Runs fully offline; no network, no accounts.
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `tabsage.ai.prompt(text, opts?)` | `string` | `opts.maxTokens` caps the reply (1–1024, default 512). Prompt is capped at 8000 chars. |
+
+```js
+const summary = await tabsage.ai.prompt("Summarize in one line: " + document.title);
+```
+
+### `tabs` — tab metadata
+
+Read-only page/tab information plus opening a new tab. Metadata only — never history, cookies, passwords, or bookmarks.
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `tabsage.tabs.current()` | `{ id, url, title }` | The tab your script runs in (resolved in-page). |
+| `tabsage.tabs.list()` | `{ id, url, title, active }[]` | All open tabs. |
+| `tabsage.tabs.open(url)` | `void` | Opens a new tab. `http`/`https` only. |
+
+### `notifications` — a toast
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `tabsage.notify(title, body)` | `void` | Shows a short toast in the browser UI. |
+
+### Security model
+
+Content scripts run in the page's own JavaScript world, not an isolated one, so the `tabsage` bridge is technically reachable by page script too. Because of that, the API deliberately exposes **no secret surfaces**: there is no access to history, cookies, passwords, or bookmarks, `storage` is namespaced per extension id, and inputs are size-capped. `tabs` returns only URLs and titles. The trust model is the same as the rest of the registry: every extension is public and reviewed before it is merged, so what an extension does with these capabilities is auditable in its source. Extensions still never run in incognito tabs.
 
 ## Testing locally
 
@@ -119,4 +174,4 @@ Tab Sage is local-first and has no telemetry, and the extension system follows t
 
 ## Questions
 
-Open an issue in this repository for questions about the extension format or the submission process. Bugs in the browser itself belong in the [Tab Sage repository](https://github.com/Spyxpo/TabSage/issues).
+Open an issue in this repository for questions about the extension format or the submission process. Bugs in the browser itself belong in the [Tab Sage repository](https://github.com/Spyxpo/tabsage-extensions/issues).
