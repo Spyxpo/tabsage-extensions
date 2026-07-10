@@ -37,6 +37,38 @@
     else alert(text);
   }
 
+  // True when an IPC rejection means the host lacks the newer `ai.chat`
+  // command (older Tab Sage builds only ship `ai.prompt`). The IPC rejects
+  // with "ext_api_ai_chat not allowed. Plugin not found".
+  function chatUnsupported(e) {
+    var s = (
+      typeof e === "string" ? e : (e && (e.message || e.toString())) || ""
+    ).toLowerCase();
+    return (
+      s.indexOf("not allowed") !== -1 ||
+      s.indexOf("not found") !== -1 ||
+      s.indexOf("ext_api_ai_chat") !== -1
+    );
+  }
+
+  // Ask the on-device assistant. Prefers the chat template (better
+  // instruction-following) but transparently falls back to the raw `ai.prompt`
+  // completion on builds that don't expose `ai.chat` yet, folding the system
+  // persona into the prompt so the result is equivalent.
+  async function aiRespond(message, opts) {
+    opts = opts || {};
+    if (tabsage.ai.chat) {
+      try {
+        return await tabsage.ai.chat(message, opts);
+      } catch (e) {
+        if (!chatUnsupported(e)) throw e;
+        console.warn("ai.chat unavailable, using ai.prompt fallback:", e);
+      }
+    }
+    var sys = opts.system ? opts.system + "\n\n" : "";
+    return tabsage.ai.prompt(sys + message, { maxTokens: opts.maxTokens });
+  }
+
   async function summarize() {
     btn.disabled = true;
     btn.textContent = "Summarizing…";
@@ -47,8 +79,9 @@
         return;
       }
       // Use the same local assistant the AI sidebar uses (chat template) for a
-      // cleaner, instruction-following summary.
-      var summary = await tabsage.ai.chat(
+      // cleaner, instruction-following summary. Falls back to ai.prompt on
+      // builds without ai.chat.
+      var summary = await aiRespond(
         "Summarize the following page in 3 short bullet points:\n\n" + text,
         {
           system:

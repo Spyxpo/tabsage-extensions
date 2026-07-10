@@ -20,6 +20,37 @@
     return (root && root.innerText ? root.innerText : "").slice(0, 5000);
   }
 
+  // True when an IPC rejection means the host lacks the newer `ai.chat`
+  // command (older Tab Sage builds only ship `ai.prompt`). The IPC rejects
+  // with "ext_api_ai_chat not allowed. Plugin not found".
+  function chatUnsupported(e) {
+    var s = (
+      typeof e === "string" ? e : (e && (e.message || e.toString())) || ""
+    ).toLowerCase();
+    return (
+      s.indexOf("not allowed") !== -1 ||
+      s.indexOf("not found") !== -1 ||
+      s.indexOf("ext_api_ai_chat") !== -1
+    );
+  }
+
+  // Ask the on-device assistant. Prefers the chat template but falls back to
+  // the raw `ai.prompt` completion on builds without `ai.chat`, folding the
+  // system persona into the prompt.
+  async function aiRespond(message, opts) {
+    opts = opts || {};
+    if (tabsage.ai.chat) {
+      try {
+        return await tabsage.ai.chat(message, opts);
+      } catch (e) {
+        if (!chatUnsupported(e)) throw e;
+        console.warn("ai.chat unavailable, using ai.prompt fallback:", e);
+      }
+    }
+    var sys = opts.system ? opts.system + "\n\n" : "";
+    return tabsage.ai.prompt(sys + message, { maxTokens: opts.maxTokens });
+  }
+
   async function ask() {
     // 1) Get the user's question in a dialog.
     var question = await tabsage.dialog.prompt(
@@ -33,7 +64,8 @@
     btn.textContent = "…";
     try {
       // 2) Ask the on-device assistant, grounding it in the page text.
-      var answer = await tabsage.ai.chat(
+      //    Falls back to ai.prompt on builds without ai.chat.
+      var answer = await aiRespond(
         "Page content:\n" +
           pageText() +
           "\n\nBased only on the page above, answer: " +
