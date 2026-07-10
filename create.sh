@@ -14,8 +14,10 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "$0")" && pwd)"
 ext_root="$repo_root/extensions"
 
+# Left empty so every manifest field is prompted for when not passed as a flag.
+# The defaults live in the prompt calls below.
 ID="" NAME="" DESCRIPTION="" AUTHOR="" HOMEPAGE=""
-PERMISSIONS="content_scripts" MATCHES="<all_urls>" RUN_AT="document_end"
+PERMISSIONS="" MATCHES="" RUN_AT=""
 
 while [ $# -gt 0 ]; do
   case "$1" in

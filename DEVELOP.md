@@ -45,15 +45,25 @@ Extensions never run in incognito tabs.
 From the repository root, scaffold a new extension:
 
 ```bash
+# macOS / Linux
 ./create.sh --id my-extension --name "My Extension" \
   --description "What it does." --author "Your Name" \
   --permissions content_scripts,ai,dialogs
 ```
 
-Run `./create.sh` with no arguments to be prompted for each field. It creates
-`extensions/<id>/` with a `manifest.json`, a guarded `content.js`, a `style.css`,
-and a `README.md`. Then load it: in Tab Sage go to **Settings → Extensions →
-Load unpacked** and point at the folder.
+```bat
+:: Windows
+create.bat --id my-extension --name "My Extension" ^
+  --description "What it does." --author "Your Name" ^
+  --permissions content_scripts,ai,dialogs
+```
+
+Run the scaffolder (`create.sh` on macOS/Linux, `create.bat` on Windows) with no
+arguments to be prompted for every manifest field; any field you omit from the
+command line is asked for interactively. It creates `extensions/<id>/` with a
+`manifest.json`, a guarded `content.js`, a `style.css`, and a `README.md`. Then
+load it: in Tab Sage go to **Settings → Extensions → Load unpacked** and point at
+the folder.
 
 ## The manifest
 

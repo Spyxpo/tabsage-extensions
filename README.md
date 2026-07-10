@@ -17,7 +17,8 @@ Installing, enabling, disabling, and removing extensions happens in Settings > E
 ## Repository layout
 
 ```text
-create.sh              scaffolds a new extension folder (see "Writing an extension")
+create.sh              scaffolds a new extension folder — macOS/Linux (see "Writing an extension")
+create.bat             the same scaffolder for Windows
 extensions/
   reading-time/
     manifest.json
@@ -33,13 +34,22 @@ One folder per extension. The folder name must equal the `id` in the manifest.
 The fastest start is the scaffolder. From the repo root:
 
 ```bash
+# macOS / Linux
 ./create.sh --id my-extension --name "My Extension" \
   --description "What it does." --author "Your Name" \
   --permissions content_scripts,storage
 ```
 
-Run `./create.sh` with no arguments to be prompted for each field instead. It
-creates `extensions/<id>/` with a `manifest.json`, a guarded `content.js`, a
+```bat
+:: Windows
+create.bat --id my-extension --name "My Extension" ^
+  --description "What it does." --author "Your Name" ^
+  --permissions content_scripts,storage
+```
+
+Run the scaffolder with no arguments to be prompted for every manifest field
+instead; any field you leave off the command line is asked for interactively.
+It creates `extensions/<id>/` with a `manifest.json`, a guarded `content.js`, a
 `style.css`, and a `README.md` ready to fill in. Valid permissions are
 `content_scripts` (required), `storage`, `ai`, `tabs`, `notifications`,
 `dialogs`, `adblock`, and `cutout`.
