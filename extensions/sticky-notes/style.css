@@ -1,0 +1,59 @@
+#ts-notes-toggle {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 2147483646;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: #f59e0b;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+#ts-notes {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 2147483646;
+  display: none;
+  flex-direction: column;
+  width: 280px;
+  height: 240px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fffbeb;
+  color: #111827;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  font: 13px system-ui, sans-serif;
+}
+
+#ts-notes-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: #fde68a;
+  font-weight: 600;
+}
+
+#ts-notes-close {
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#ts-notes-text {
+  flex: 1;
+  border: 0;
+  resize: none;
+  padding: 10px;
+  background: transparent;
+  color: inherit;
+  font: 13px/1.5 system-ui, sans-serif;
+  outline: none;
+}

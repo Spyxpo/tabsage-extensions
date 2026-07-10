@@ -17,6 +17,7 @@ Installing, enabling, disabling, and removing extensions happens in Settings > E
 ## Repository layout
 
 ```text
+create.sh              scaffolds a new extension folder (see "Writing an extension")
 extensions/
   reading-time/
     manifest.json
@@ -29,7 +30,26 @@ One folder per extension. The folder name must equal the `id` in the manifest.
 
 ## Writing an extension
 
-Start by copying `extensions/reading-time/`. It is a complete working extension in about sixty lines and covers everything the format supports.
+The fastest start is the scaffolder. From the repo root:
+
+```bash
+./create.sh --id my-extension --name "My Extension" \
+  --description "What it does." --author "Your Name" \
+  --permissions content_scripts,storage
+```
+
+Run `./create.sh` with no arguments to be prompted for each field instead. It
+creates `extensions/<id>/` with a `manifest.json`, a guarded `content.js`, a
+`style.css`, and a `README.md` ready to fill in. Valid permissions are
+`content_scripts` (required), `storage`, `ai`, `tabs`, and `notifications`.
+
+Prefer to start from a real extension? Copy one of these:
+
+- **`reading-time`** — the minimal reference (`content_scripts` only).
+- **`word-count`** — another tiny, permission-free example (reads the selection).
+- **`sticky-notes`** — a per-site notepad using `storage` + `notifications`.
+- **`ai-summarize`** — summarizes the page with the on-device model, using
+  `ai` + `storage` + `notifications`. The reference for the `tabsage` API.
 
 Every extension needs a `manifest.json`:
 
@@ -134,13 +154,24 @@ Read-only page/tab information plus opening a new tab. Metadata only — never h
 
 ### Security model
 
-Content scripts run in the page's own JavaScript world, not an isolated one, so the `tabsage` bridge is technically reachable by page script too. Because of that, the API deliberately exposes **no secret surfaces**: there is no access to history, cookies, passwords, or bookmarks, `storage` is namespaced per extension id, and inputs are size-capped. `tabs` returns only URLs and titles. The trust model is the same as the rest of the registry: every extension is public and reviewed before it is merged, so what an extension does with these capabilities is auditable in its source. Extensions still never run in incognito tabs.
+**Extensions cannot read or touch Tab Sage's saved passwords, autofill data, cookies, browsing history, bookmarks, or any security, privacy, or parental-control settings.** No permission grants any of that, and there is no command that exposes it. The full capability surface an extension can ever have is exactly the four `tabsage` groups documented above (`storage`, `ai`, `tabs`, `notifications`) plus the ordinary DOM of the pages it matches — nothing more. The browser's own password/autofill vault runs in a separate mechanism that the `tabsage` API does not expose.
+
+Content scripts run in the page's own JavaScript world, not an isolated one, so the `tabsage` bridge is technically reachable by page script too. Because of that, the API deliberately exposes **no secret surfaces**:
+
+- `storage` is namespaced per extension id and is only the extension's own data — one extension cannot read another's, and none of it is Tab Sage's.
+- `tabs` returns only URLs and titles of open tabs (metadata), and `open` accepts `http`/`https` only. There is no access to tab content, cookies, or session data.
+- `ai` prompts the on-device model and returns text; it has no side effects and no access to your data.
+- All inputs are size-capped and every call re-validates the extension id.
+
+A content script has the same reach over a page as any script the page itself loads — it can read and change that page's DOM, and that is the extent of it. It gets no elevated access to the browser. The trust model is the same as the rest of the registry: every extension is public and reviewed before it is merged, so what an extension does with these capabilities is auditable in its source. Extensions still never run in incognito tabs.
 
 ## Testing locally
 
 You do not need this repository to develop an extension. Put your extension folder anywhere on disk, open Tab Sage, go to Settings > Extensions, and use "Load unpacked" to point at the folder. The extension installs immediately.
 
 After you edit your files, load the folder again to pick up the changes, then reload the page you are testing against. Extensions never run in incognito tabs, so test in a normal one.
+
+To confirm an extension is actually running, open Settings > Extensions and click it: the detail panel shows whether it matches the current page and streams its activation and `console` output live. If several extensions draw overlapping floating widgets, click an extension in the toolbar's puzzle-icon menu to bring its UI to the front.
 
 ## Submitting an extension
 
