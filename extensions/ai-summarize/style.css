@@ -17,21 +17,3 @@
   opacity: 0.7;
   cursor: default;
 }
-
-#ts-ai-summary {
-  position: fixed;
-  right: 16px;
-  bottom: 60px;
-  z-index: 2147483646;
-  max-width: 320px;
-  max-height: 40vh;
-  overflow: auto;
-  display: none;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: #111827;
-  color: #f9fafb;
-  font: 13px/1.5 system-ui, sans-serif;
-  white-space: pre-wrap;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-}

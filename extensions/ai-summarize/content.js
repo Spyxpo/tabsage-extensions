@@ -1,12 +1,20 @@
 // AI Summarize: a floating button that summarizes the current page using Tab
-// Sage's on-device AI, remembers the last summary per URL, and toasts when done.
-// It also doubles as the reference for the `tabsage` host API (ai + storage +
-// notifications). Everything runs locally — no network, no accounts.
+// Sage's on-device AI and shows the result in a dialog over the page. It
+// remembers the last summary per URL and toasts when done. It also doubles as
+// the reference for the `tabsage` host API (ai + storage + notifications +
+// dialogs). Everything runs locally — no network, no accounts.
 (function () {
   // Content scripts can run more than once per page (e.g. after in-page
   // navigation), so bail out if we already installed.
   if (window.__tsAiSummarize) return;
   window.__tsAiSummarize = true;
+
+  // The tabsage API is an in-scope local (not on window). Bail cleanly if the
+  // 'ai' capability wasn't granted.
+  if (typeof tabsage === "undefined" || !tabsage.ai) {
+    console.warn("AI Summarize needs the 'ai' permission");
+    return;
+  }
 
   // `console.*` output is forwarded to Settings > Extensions, so these lines are
   // how you confirm the extension is alive on a page.
@@ -22,42 +30,34 @@
     return (root && root.innerText ? root.innerText : "").slice(0, 6000);
   }
 
-  function showPanel(text) {
-    var panel = document.getElementById("ts-ai-summary");
-    if (!panel) {
-      panel = document.createElement("div");
-      panel.id = "ts-ai-summary";
-      document.body.appendChild(panel);
-    }
-    panel.textContent = text;
-    panel.style.display = "block";
+  // Show the summary in a dialog over the page (falls back to an alert if the
+  // 'dialogs' permission isn't granted).
+  function showSummary(text) {
+    if (tabsage.dialog) tabsage.dialog.alert(text, "Page summary");
+    else alert(text);
   }
 
   async function summarize() {
-    if (!window.tabsage || !tabsage.ai) {
-      console.warn("AI Summarize: the 'ai' permission is not available");
-      return;
-    }
     btn.disabled = true;
     btn.textContent = "Summarizing…";
     try {
       var text = mainText();
       if (text.trim().length < 200) {
-        showPanel("Not enough text on this page to summarize.");
+        showSummary("Not enough text on this page to summarize.");
         return;
       }
       var summary = await tabsage.ai.prompt(
         "Summarize the following page in 3 short bullet points:\n\n" + text,
         { maxTokens: 256 },
       );
-      showPanel(summary);
-      // Remember it so re-opening the page shows the last summary instantly.
+      showSummary(summary);
+      // Remember it so re-opening the page can show the last summary.
       if (tabsage.storage) await tabsage.storage.set(storageKey, summary);
       if (tabsage.notify) tabsage.notify("AI Summarize", "Summary ready");
       console.log("AI Summarize: produced a summary");
     } catch (e) {
       console.error("AI Summarize failed:", e);
-      showPanel("Could not summarize this page.");
+      showSummary("Could not summarize this page.");
     } finally {
       btn.disabled = false;
       btn.textContent = "Summarize";
@@ -69,14 +69,4 @@
   btn.textContent = "Summarize";
   btn.addEventListener("click", summarize);
   document.body.appendChild(btn);
-
-  // If we summarized this page before, show the cached summary right away.
-  if (window.tabsage && tabsage.storage) {
-    tabsage.storage
-      .get(storageKey)
-      .then(function (prev) {
-        if (prev) showPanel(prev);
-      })
-      .catch(function () {});
-  }
 })();

@@ -48,8 +48,9 @@ Prefer to start from a real extension? Copy one of these:
 - **`reading-time`** — the minimal reference (`content_scripts` only).
 - **`word-count`** — another tiny, permission-free example (reads the selection).
 - **`sticky-notes`** — a per-site notepad using `storage` + `notifications`.
-- **`ai-summarize`** — summarizes the page with the on-device model, using
-  `ai` + `storage` + `notifications`. The reference for the `tabsage` API.
+- **`ai-summarize`** — summarizes the page with the on-device model and shows
+  the result in a dialog, using `ai` + `storage` + `notifications` + `dialogs`.
+  The reference for the `tabsage` API.
 
 Every extension needs a `manifest.json`:
 
@@ -103,10 +104,12 @@ A manifest that requests an unknown permission is rejected at install time, so a
 
 ## The tabsage API
 
-Inside a content script your code gets a `tabsage` object with the capabilities your manifest asked for. Each capability is a permission you add to `permissions` alongside `content_scripts`. If you don't request a permission, that part of the API is simply absent, so feature-detect before you call:
+Inside a content script your code gets a `tabsage` object with the capabilities your manifest asked for. Each capability is a permission you add to `permissions` alongside `content_scripts`. If you don't request a permission, that part of the API is simply absent, so feature-detect before you call.
+
+**Important:** `tabsage` is an in-scope variable available directly inside your content script — it is **not** `window.tabsage`. Referencing `window.tabsage` returns `undefined`. Guard with `typeof tabsage !== "undefined"` (e.g. if you want your script to also run outside Tab Sage), then use `tabsage.storage`, `tabsage.ai`, and so on:
 
 ```js
-if (tabsage.storage) {
+if (typeof tabsage !== "undefined" && tabsage.storage) {
   await tabsage.storage.set("seen", "1");
 }
 ```
@@ -187,7 +190,7 @@ You do not need this repository to develop an extension. Put your extension fold
 
 After you edit your files, load the folder again to pick up the changes, then reload the page you are testing against. Extensions never run in incognito tabs, so test in a normal one.
 
-To confirm an extension is actually running, open Settings > Extensions and click it: the detail panel shows whether it matches the current page and streams its activation and `console` output live. If several extensions draw overlapping floating widgets, click an extension in the toolbar's puzzle-icon menu to bring its UI to the front.
+To confirm an extension is actually running, open Settings > Extensions and click it: the detail panel shows whether it matches the current page and streams its activation and `console` output live. If several extensions draw overlapping floating widgets, click an extension in the toolbar's puzzle-icon menu — the page dims and its UI is spotlighted with a pulsing highlight so you can see exactly where it is.
 
 ## Submitting an extension
 

@@ -1,13 +1,13 @@
 # AI Summarize
 
-Adds a floating **Summarize** button to every page. Click it and Tab Sage's
-on-device AI produces a short bullet-point summary of the page's main text, shown
-in a small panel. The last summary for each URL is remembered, so revisiting a
-page shows it instantly. A toast confirms when a new summary is ready.
+Adds a floating **Summarize** button (bottom-right) to every page. Click it and
+Tab Sage's on-device AI produces a short bullet-point summary of the page's main
+text, shown in a dialog over the page. The last summary for each URL is
+remembered, and a toast confirms when a new summary is ready.
 
 This is also the reference extension for the `tabsage` host API: it uses `ai`
-(prompt the local model), `storage` (remember the last summary per page), and
-`notifications` (the toast).
+(prompt the local model), `storage` (remember the last summary per page),
+`notifications` (the toast), and `dialogs` (show the summary).
 
 ## What it touches
 
@@ -19,7 +19,7 @@ This is also the reference extension for the `tabsage` host API: it uses `ai`
 
 ## Permissions
 
-`content_scripts`, `ai`, `storage`, `notifications`.
+`content_scripts`, `ai`, `storage`, `notifications`, `dialogs`.
 
 ## Confirming it works
 

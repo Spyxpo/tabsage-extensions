@@ -140,8 +140,10 @@ cat > "$dest/content.js" <<JS
   console.log("$NAME ready on", location.href);
 
   // TODO: your extension code here. If you requested host permissions, the
-  // \`tabsage\` API is available (e.g. tabsage.storage, tabsage.ai, tabsage.tabs,
-  // tabsage.notify) — see the repository README.
+  // \`tabsage\` API is available as an in-scope local (NOT window.tabsage):
+  //   if (typeof tabsage !== "undefined" && tabsage.storage) { ... }
+  // Groups: tabsage.storage, tabsage.ai, tabsage.tabs, tabsage.notify,
+  // tabsage.dialog — see the repository README.
 })();
 JS
 

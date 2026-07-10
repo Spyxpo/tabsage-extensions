@@ -4,7 +4,7 @@
   if (window.__tsStickyNotes) return;
   window.__tsStickyNotes = true;
 
-  if (!window.tabsage || !tabsage.storage) {
+  if (typeof tabsage === "undefined" || !tabsage.storage) {
     console.warn("Sticky Notes needs the 'storage' permission");
     return;
   }
