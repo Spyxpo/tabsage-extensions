@@ -83,7 +83,7 @@ Load unpacked** and point at the folder.
 | --- | --- | --- |
 | `id` | yes | Unique id. Lowercase letters, digits, hyphens only. Must equal the folder name. |
 | `name` | yes | Display name in the manager. |
-| `version` | yes | Semantic version, e.g. `1.0.0`. Bump it on every update. |
+| `version` | yes | `MAJOR.MINOR.PATCH`, e.g. `1.0.0`. Bump it on every update — the PR check requires it to increase (see [Submitting](#submitting)). |
 | `description` | yes | One or two sentences. |
 | `author` | yes | Your name or handle. |
 | `homepage` | no | Link to your site or profile. |
@@ -97,10 +97,10 @@ one group of the `tabsage` API:
 | --- | --- |
 | `content_scripts` | Injecting your `js`/`css` into matched pages (required). |
 | `storage` | `tabsage.storage` — per-extension key/value. |
-| `ai` | `tabsage.ai` — the on-device model (chat/prompt). |
+| `ai` | `tabsage.ai` — the on-device model (`chat`/`complete`). |
 | `tabs` | `tabsage.tabs` — tab metadata + open a tab. |
-| `notifications` | `tabsage.notify` — a toast. |
-| `dialogs` | `tabsage.dialog` — alert/confirm/prompt modals. |
+| `notifications` | `tabsage.notifications` — a toast. |
+| `dialogs` | `tabsage.dialogs` — alert/confirm/prompt modals. |
 | `adblock` | `tabsage.adblock` — toggle the blocker on this tab. |
 | `cutout` | `tabsage.cutout` — element removal mode on this tab. |
 
@@ -149,6 +149,11 @@ if (typeof tabsage !== "undefined" && tabsage.ai) {
 
 Every method returns a Promise. All data stays on the device.
 
+> **Method names (v1.1).** The surface was made consistent: `ai.complete` (was
+> `ai.prompt`), `notifications.show(...)` (was `notify(...)`), `dialogs.*` (was
+> `dialog.*`), and `cutout.enable/disable` (was `start/stop`). The old names
+> still work as deprecated aliases; use the canonical names below in new code.
+
 ### `storage`
 
 Per-extension key/value store, namespaced to your id and scoped to the active
@@ -168,14 +173,15 @@ const raw = await tabsage.storage.get("count");
 
 ### `ai`
 
-The same on-device model that powers Tab Sage's AI sidebar (the "chatbot"). Fully
-offline. `chat` uses the assistant chat template (better instruction-following);
-`prompt` is a raw completion.
+The **same on-device GGUF model that powers Tab Sage's AI sidebar** — identical
+runtime and chat template, not a separate or smaller model. Fully offline. `chat`
+uses the assistant chat template (better instruction-following); `complete` is a
+raw completion.
 
 | Method | Returns | Notes |
 | --- | --- | --- |
-| `tabsage.ai.chat(message, opts?)` | `string` | `opts.system` sets the persona; `opts.maxTokens` (1–1024, default 768). |
-| `tabsage.ai.prompt(text, opts?)` | `string` | `opts.maxTokens` (1–1024, default 512). |
+| `tabsage.ai.chat(message, opts?)` | `string` | Same pipeline and model as the sidebar. `opts.system` sets the persona; `opts.maxTokens` (1–1024, default 768). |
+| `tabsage.ai.complete(text, opts?)` | `string` | Raw completion on the same model. `opts.maxTokens` (1–1024, default 512). Alias: `ai.prompt`. |
 
 ```js
 const answer = await tabsage.ai.chat("Summarize this in 3 bullets:\n" + text, {
@@ -191,10 +197,10 @@ recommended pattern is to show AI replies (and errors) in a dialog:
 ```js
 try {
   const reply = await tabsage.ai.chat(question);
-  await tabsage.dialog.alert(reply, "Answer");
+  await tabsage.dialogs.alert(reply, "Answer");
 } catch (e) {
   const reason = typeof e === "string" ? e : (e && e.message) || "";
-  await tabsage.dialog.alert(
+  await tabsage.dialogs.alert(
     "Couldn't get an answer.\n\n" + reason +
       "\n\nTip: download the model in Settings → Models and set the runtime to “llama”.",
     "Answer",
@@ -217,7 +223,9 @@ plus opening a tab.
 
 | Method | Returns |
 | --- | --- |
-| `tabsage.notify(title, body)` | `void` (a short toast) |
+| `tabsage.notifications.show(title, body)` | `void` (a short toast) |
+
+Alias: `tabsage.notify(title, body)`.
 
 ### `dialogs`
 
@@ -226,13 +234,15 @@ Styled in-page modals that work even where a page blocks the native
 
 | Method | Returns |
 | --- | --- |
-| `tabsage.dialog.alert(message, title?)` | `void` |
-| `tabsage.dialog.confirm(message, title?)` | `boolean` |
-| `tabsage.dialog.prompt(message, default?, title?)` | `string \| null` |
+| `tabsage.dialogs.alert(message, title?)` | `void` |
+| `tabsage.dialogs.confirm(message, title?)` | `boolean` |
+| `tabsage.dialogs.prompt(message, default?, title?)` | `string \| null` |
+
+Alias: the whole group is also reachable as `tabsage.dialog.*`.
 
 ```js
-const name = await tabsage.dialog.prompt("Your name?", "");
-if (name) await tabsage.dialog.alert("Hi, " + name + "!");
+const name = await tabsage.dialogs.prompt("Your name?", "");
+if (name) await tabsage.dialogs.alert("Hi, " + name + "!");
 ```
 
 ### `adblock`
@@ -252,8 +262,10 @@ Start the mode where the user clicks a page section to remove it (Escape exits).
 
 | Method | Returns |
 | --- | --- |
-| `tabsage.cutout.start()` | `void` |
-| `tabsage.cutout.stop()` | `void` |
+| `tabsage.cutout.enable()` | `void` |
+| `tabsage.cutout.disable()` | `void` |
+
+Aliases: `cutout.start()` / `cutout.stop()`.
 
 ## Seeing your extension work
 
@@ -317,7 +329,7 @@ A minimal AI extension that answers a question about the page in a dialog
 (function () {
   if (window.__askPageRan) return;
   window.__askPageRan = true;
-  if (typeof tabsage === "undefined" || !tabsage.ai || !tabsage.dialog) return;
+  if (typeof tabsage === "undefined" || !tabsage.ai || !tabsage.dialogs) return;
 
   var btn = document.createElement("button");
   btn.textContent = "Ask AI";
@@ -325,7 +337,7 @@ A minimal AI extension that answers a question about the page in a dialog
     "position:fixed;left:16px;top:16px;z-index:2147483646;padding:8px 14px;" +
     "border:0;border-radius:999px;background:#0ea5e9;color:#fff;cursor:pointer";
   btn.addEventListener("click", async function () {
-    var q = await tabsage.dialog.prompt("Ask about this page:", "");
+    var q = await tabsage.dialogs.prompt("Ask about this page:", "");
     if (!q) return;
     try {
       var text = (document.body.innerText || "").slice(0, 4000);
@@ -333,9 +345,9 @@ A minimal AI extension that answers a question about the page in a dialog
         system: "Answer concisely using only the page text.",
         maxTokens: 300,
       });
-      await tabsage.dialog.alert(a, "Answer");
+      await tabsage.dialogs.alert(a, "Answer");
     } catch (e) {
-      await tabsage.dialog.alert("Couldn't answer: " + e, "Answer");
+      await tabsage.dialogs.alert("Couldn't answer: " + e, "Answer");
     }
   });
   document.body.appendChild(btn);
@@ -352,6 +364,22 @@ See the `extensions/` folder for the full working versions: `reading-time`,
    your manifest `id`.
 3. Open a pull request that touches only your own folder.
 
-Bump `version` and note changes in your extension's `README.md` for updates.
+Every pull request runs an automated check (`.github/workflows/validate-extension.yml`)
+before review. It must pass, and it enforces:
+
+- exactly **one** `extensions/<id>/` folder changed, nothing outside it;
+- a valid manifest (`id` == folder name and `^[a-z0-9-]+$`, required fields
+  present, known permissions, referenced `js`/`css` files exist, `version` is
+  `MAJOR.MINOR.PATCH`);
+- a **new** extension's folder name is unique;
+- an **update** **increases** `version` above the currently published one.
+
+### Updating your extension
+
+An update is just another pull request from you that changes only your folder.
+**Bump `version`** (the check rejects an equal or lower version) and note the
+change in your extension's `README.md`. Because a reused folder name reads as an
+update, choose a unique `id` for a brand-new extension.
+
 Spyxpo reviews every PR before merging; small, readable extensions get through
 faster. See [README.md](README.md#submitting-an-extension) for the full rules.

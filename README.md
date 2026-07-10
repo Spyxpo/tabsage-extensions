@@ -41,7 +41,8 @@ The fastest start is the scaffolder. From the repo root:
 Run `./create.sh` with no arguments to be prompted for each field instead. It
 creates `extensions/<id>/` with a `manifest.json`, a guarded `content.js`, a
 `style.css`, and a `README.md` ready to fill in. Valid permissions are
-`content_scripts` (required), `storage`, `ai`, `tabs`, `notifications`, and `dialogs`.
+`content_scripts` (required), `storage`, `ai`, `tabs`, `notifications`,
+`dialogs`, `adblock`, and `cutout`.
 
 Prefer to start from a real extension? Copy one of these:
 
@@ -83,11 +84,11 @@ Every extension needs a `manifest.json`:
 | --- | --- | --- |
 | `id` | yes | Unique identifier. Lowercase letters, digits, and hyphens only. Must match the folder name. |
 | `name` | yes | Display name shown in the extension manager. |
-| `version` | yes | Semantic version, for example `1.0.0`. Bump it with every update. |
+| `version` | yes | Version string, `MAJOR.MINOR.PATCH` (for example `1.0.0`). **Must be bumped on every update** — a pull-request check requires it to increase above the published version. |
 | `description` | yes | One or two sentences describing what the extension does. |
 | `author` | yes | Your name or handle. |
 | `homepage` | no | Link to your site or profile. |
-| `permissions` | yes | What the extension needs. `content_scripts` is required to inject anything; add `storage`, `ai`, `tabs`, and/or `notifications` to use the matching parts of the `tabsage` API (see [The tabsage API](#the-tabsage-api)). |
+| `permissions` | yes | What the extension needs. `content_scripts` is required to inject anything; add `storage`, `ai`, `tabs`, `notifications`, `dialogs`, `adblock`, and/or `cutout` to use the matching parts of the `tabsage` API (see [The tabsage API](#the-tabsage-api)). |
 | `content_scripts` | yes | Which scripts and styles run on which pages. See below. |
 
 Each entry in `content_scripts` takes:
@@ -121,6 +122,12 @@ if (typeof tabsage !== "undefined" && tabsage.storage) {
 
 Every method returns a Promise. All data stays on the device.
 
+> **Method names (v1.1):** the API was tidied for consistency — `ai.complete`
+> (was `ai.prompt`), `notifications.show(...)` (was `notify(...)`), `dialogs.*`
+> (was `dialog.*`), and `cutout.enable/disable` (was `start/stop`). The old
+> names still work as deprecated aliases, so existing extensions keep running,
+> but new code should use the names below.
+
 ### `storage` — per-extension key/value
 
 A small persistent store, namespaced to your extension id and scoped to the active profile. Values are strings (stringify your own JSON). Survives reloads and restarts.
@@ -134,12 +141,12 @@ A small persistent store, namespaced to your extension id and scoped to the acti
 
 ### `ai` — the on-device model (the chatbot)
 
-The same local model that powers Tab Sage's AI sidebar. Runs fully offline; no network, no accounts. `chat` uses the assistant's chat template (better instruction-following — this is the "chatbot"); `prompt` is a raw completion.
+The **same local GGUF model that powers Tab Sage's AI sidebar** — the exact same on-device runtime and chat template, not a separate or smaller model. Runs fully offline; no network, no accounts. `chat` uses the assistant's chat template (better instruction-following — this is the "chatbot"); `complete` is a raw completion.
 
 | Method | Returns | Notes |
 | --- | --- | --- |
-| `tabsage.ai.chat(message, opts?)` | `string` | Assistant-style reply (same pipeline as the sidebar). `opts.system` sets the persona, `opts.maxTokens` caps the reply (1–1024, default 768). |
-| `tabsage.ai.prompt(text, opts?)` | `string` | Raw single-shot completion. `opts.maxTokens` (1–1024, default 512). |
+| `tabsage.ai.chat(message, opts?)` | `string` | Assistant-style reply (same pipeline and model as the sidebar). `opts.system` sets the persona, `opts.maxTokens` caps the reply (1–1024, default 768). |
+| `tabsage.ai.complete(text, opts?)` | `string` | Raw single-shot completion on the same model. `opts.maxTokens` (1–1024, default 512). Alias: `ai.prompt`. |
 
 ```js
 const summary = await tabsage.ai.chat("Summarize this page in 3 bullets:\n" + document.body.innerText.slice(0, 4000), {
@@ -164,7 +171,7 @@ Read-only page/tab information plus opening a new tab. Metadata only — never h
 
 | Method | Returns | Notes |
 | --- | --- | --- |
-| `tabsage.notify(title, body)` | `void` | Shows a short toast in the browser UI. |
+| `tabsage.notifications.show(title, body)` | `void` | Shows a short toast in the browser UI. Alias: `tabsage.notify(title, body)`. |
 
 ### `dialogs` — modal alert / confirm / prompt
 
@@ -172,12 +179,14 @@ Styled in-page modals. Unlike the page's own `window.alert/confirm/prompt`, thes
 
 | Method | Returns | Notes |
 | --- | --- | --- |
-| `tabsage.dialog.alert(message, title?)` | `void` | One "OK" button. |
-| `tabsage.dialog.confirm(message, title?)` | `boolean` | `true` if confirmed, `false` if cancelled. |
-| `tabsage.dialog.prompt(message, default?, title?)` | `string \| null` | The entered text, or `null` if cancelled. |
+| `tabsage.dialogs.alert(message, title?)` | `void` | One "OK" button. |
+| `tabsage.dialogs.confirm(message, title?)` | `boolean` | `true` if confirmed, `false` if cancelled. |
+| `tabsage.dialogs.prompt(message, default?, title?)` | `string \| null` | The entered text, or `null` if cancelled. |
+
+(Alias: the whole group is also reachable as `tabsage.dialog.*`.)
 
 ```js
-if (await tabsage.dialog.confirm("Clear this site's notes?")) {
+if (await tabsage.dialogs.confirm("Clear this site's notes?")) {
   await tabsage.storage.remove("note:" + location.hostname);
 }
 ```
@@ -198,8 +207,8 @@ Start the "cutout" mode where the user clicks a section of the page to remove it
 
 | Method | Returns | Notes |
 | --- | --- | --- |
-| `tabsage.cutout.start()` | `void` | Enter cutout mode on this tab. |
-| `tabsage.cutout.stop()` | `void` | Exit cutout mode. |
+| `tabsage.cutout.enable()` | `void` | Enter cutout mode on this tab. Alias: `cutout.start()`. |
+| `tabsage.cutout.disable()` | `void` | Exit cutout mode. Alias: `cutout.stop()`. |
 
 ### Security model
 
@@ -234,6 +243,15 @@ Rules for pull requests:
 - Only touch your own extension's folder. Pull requests that modify another author's extension, or anything outside `extensions/`, will be closed. This rule exists so that no update can slip malicious code into someone else's extension.
 - The extension must be your own work, and you must be fine with it being public under this repository.
 - Updates to an existing extension go through the same process: a pull request from the original author that bumps `version` and notes the changes in the extension's `README.md`.
+
+Every pull request runs an automated check (`.github/workflows/validate-extension.yml`) that must pass before a maintainer will review it. It enforces the rules above mechanically:
+
+- the PR touches exactly **one** `extensions/<id>/` folder and nothing outside it;
+- the `manifest.json` is valid — `id` equals the folder name and matches `^[a-z0-9-]+$`, required fields are present, permissions are from the known set, referenced `js`/`css` files exist, and `version` is `MAJOR.MINOR.PATCH`;
+- a **new** extension's folder name is unique (it can't collide with an existing one);
+- an **update** to an existing extension **increases** `version` above the currently published one.
+
+If the check fails it prints exactly what to fix. A new extension folder name that already exists reads as an update, so it will be held to the version-increment rule — pick a unique `id`.
 
 ## Review and verification
 

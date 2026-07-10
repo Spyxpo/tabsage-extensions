@@ -58,7 +58,8 @@
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
       tabsage.storage.set(key, text.value).then(function () {
-        if (tabsage.notify) tabsage.notify("Sticky Notes", "Saved");
+        if (tabsage.notifications)
+          tabsage.notifications.show("Sticky Notes", "Saved");
       });
     }, 600);
   });

@@ -1,11 +1,11 @@
 // Page Chatbot: a floating chat button. Ask a question about the current page;
 // the on-device AI (same model as the sidebar) answers, and the reply is shown
-// in a dialog. Demonstrates combining tabsage.ai.chat with tabsage.dialog.
+// in a dialog. Demonstrates combining tabsage.ai.chat with tabsage.dialogs.
 (function () {
   if (window.__tsPageChatbot) return;
   window.__tsPageChatbot = true;
 
-  if (typeof tabsage === "undefined" || !tabsage.ai || !tabsage.dialog) {
+  if (typeof tabsage === "undefined" || !tabsage.ai || !tabsage.dialogs) {
     console.warn("Page Chatbot needs the 'ai' and 'dialogs' permissions");
     return;
   }
@@ -13,15 +13,37 @@
   console.log("Page Chatbot ready on", location.href);
 
   function pageText() {
-    var root =
-      document.querySelector("article") ||
-      document.querySelector("main") ||
-      document.body;
+    // News/blog pages often have MANY <article> elements — the real story plus
+    // teaser/related-story cards — so the first <article> can be a tiny card.
+    // Score every plausible content container by visible text length and keep
+    // the richest one; fall back to <body> only if no semantic container exists.
+    var sels = [
+      "article",
+      "main",
+      "[role=main]",
+      ".article-body",
+      ".story-content",
+      ".entry-content",
+      "#content",
+    ];
+    var best = null;
+    var bestLen = 0;
+    sels.forEach(function (sel) {
+      var nodes = document.querySelectorAll(sel);
+      for (var i = 0; i < nodes.length; i++) {
+        var t = nodes[i].innerText ? nodes[i].innerText.trim() : "";
+        if (t.length > bestLen) {
+          best = nodes[i];
+          bestLen = t.length;
+        }
+      }
+    });
+    var root = best || document.body;
     return (root && root.innerText ? root.innerText : "").slice(0, 5000);
   }
 
   // True when an IPC rejection means the host lacks the newer `ai.chat`
-  // command (older Tab Sage builds only ship `ai.prompt`). The IPC rejects
+  // command (older Tab Sage builds only ship `ai.complete`). The IPC rejects
   // with "ext_api_ai_chat not allowed. Plugin not found".
   function chatUnsupported(e) {
     var s = (
@@ -35,7 +57,7 @@
   }
 
   // Ask the on-device assistant. Prefers the chat template but falls back to
-  // the raw `ai.prompt` completion on builds without `ai.chat`, folding the
+  // the raw `ai.complete` completion on builds without `ai.chat`, folding the
   // system persona into the prompt.
   async function aiRespond(message, opts) {
     opts = opts || {};
@@ -44,16 +66,16 @@
         return await tabsage.ai.chat(message, opts);
       } catch (e) {
         if (!chatUnsupported(e)) throw e;
-        console.warn("ai.chat unavailable, using ai.prompt fallback:", e);
+        console.warn("ai.chat unavailable, using ai.complete fallback:", e);
       }
     }
     var sys = opts.system ? opts.system + "\n\n" : "";
-    return tabsage.ai.prompt(sys + message, { maxTokens: opts.maxTokens });
+    return tabsage.ai.complete(sys + message, { maxTokens: opts.maxTokens });
   }
 
   async function ask() {
     // 1) Get the user's question in a dialog.
-    var question = await tabsage.dialog.prompt(
+    var question = await tabsage.dialogs.prompt(
       "Ask a question about this page:",
       "",
       "Page Chatbot",
@@ -64,7 +86,7 @@
     btn.textContent = "…";
     try {
       // 2) Ask the on-device assistant, grounding it in the page text.
-      //    Falls back to ai.prompt on builds without ai.chat.
+      //    Falls back to ai.complete on builds without ai.chat.
       var answer = await aiRespond(
         "Page content:\n" +
           pageText() +
@@ -77,12 +99,12 @@
         },
       );
       // 3) Show the reply in a dialog.
-      await tabsage.dialog.alert(answer, "Page Chatbot");
+      await tabsage.dialogs.alert(answer, "Page Chatbot");
     } catch (e) {
       var reason =
         typeof e === "string" ? e : (e && (e.message || e.toString())) || "";
       console.error("Page Chatbot failed:", e);
-      await tabsage.dialog.alert(
+      await tabsage.dialogs.alert(
         "Couldn't get an answer.\n\n" +
           (reason || "The on-device AI model may not be ready.") +
           "\n\nTip: open Settings → Models, download the model, and set the AI runtime to “llama”.",

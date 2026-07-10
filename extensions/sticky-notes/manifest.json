@@ -1,16 +1,26 @@
 {
   "id": "sticky-notes",
   "name": "Sticky Notes",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A per-site notepad. Jot notes on any site and they come back when you return, stored locally on your device.",
   "author": "Spyxpo",
   "homepage": "https://github.com/Spyxpo",
-  "permissions": ["content_scripts", "storage", "notifications"],
+  "permissions": [
+    "content_scripts",
+    "storage",
+    "notifications"
+  ],
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "css": ["style.css"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "style.css"
+      ],
       "run_at": "document_end"
     }
   ]

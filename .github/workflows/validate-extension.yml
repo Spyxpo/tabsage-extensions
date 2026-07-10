@@ -1,0 +1,32 @@
+name: Validate extension PR
+
+# Runs on every pull request that touches the extensions/ folder and enforces
+# the submission rules (one extension per PR, valid manifest, unique folder,
+# version bumped on updates). See .github/scripts/validate-pr.mjs.
+#
+# Make this a required check in branch protection (Settings → Branches) so a
+# failing run blocks merge.
+
+on:
+  pull_request:
+    paths:
+      - "extensions/**"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0 # full history so we can diff against the base branch
+
+      - name: Validate the extension pull request
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node .github/scripts/validate-pr.mjs

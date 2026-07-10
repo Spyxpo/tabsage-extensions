@@ -57,12 +57,12 @@
   // Show the summary in a dialog over the page (falls back to an alert if the
   // 'dialogs' permission isn't granted).
   function showSummary(text) {
-    if (tabsage.dialog) tabsage.dialog.alert(text, "Page summary");
+    if (tabsage.dialogs) tabsage.dialogs.alert(text, "Page summary");
     else alert(text);
   }
 
   // True when an IPC rejection means the host lacks the newer `ai.chat`
-  // command (older Tab Sage builds only ship `ai.prompt`). The IPC rejects
+  // command (older Tab Sage builds only ship `ai.complete`). The IPC rejects
   // with "ext_api_ai_chat not allowed. Plugin not found".
   function chatUnsupported(e) {
     var s = (
@@ -76,7 +76,7 @@
   }
 
   // Ask the on-device assistant. Prefers the chat template (better
-  // instruction-following) but transparently falls back to the raw `ai.prompt`
+  // instruction-following) but transparently falls back to the raw `ai.complete`
   // completion on builds that don't expose `ai.chat` yet, folding the system
   // persona into the prompt so the result is equivalent.
   async function aiRespond(message, opts) {
@@ -86,11 +86,11 @@
         return await tabsage.ai.chat(message, opts);
       } catch (e) {
         if (!chatUnsupported(e)) throw e;
-        console.warn("ai.chat unavailable, using ai.prompt fallback:", e);
+        console.warn("ai.chat unavailable, using ai.complete fallback:", e);
       }
     }
     var sys = opts.system ? opts.system + "\n\n" : "";
-    return tabsage.ai.prompt(sys + message, { maxTokens: opts.maxTokens });
+    return tabsage.ai.complete(sys + message, { maxTokens: opts.maxTokens });
   }
 
   async function summarize() {
@@ -103,7 +103,7 @@
         return;
       }
       // Use the same local assistant the AI sidebar uses (chat template) for a
-      // cleaner, instruction-following summary. Falls back to ai.prompt on
+      // cleaner, instruction-following summary. Falls back to ai.complete on
       // builds without ai.chat.
       var summary = await aiRespond(
         "Summarize the following page in 3 short bullet points:\n\n" + text,
@@ -116,7 +116,8 @@
       showSummary(summary);
       // Remember it so re-opening the page can show the last summary.
       if (tabsage.storage) await tabsage.storage.set(storageKey, summary);
-      if (tabsage.notify) tabsage.notify("AI Summarize", "Summary ready");
+      if (tabsage.notifications)
+        tabsage.notifications.show("AI Summarize", "Summary ready");
       console.log("AI Summarize: produced a summary");
     } catch (e) {
       // Surface the real reason (e.g. the on-device model isn't downloaded /
