@@ -51,6 +51,11 @@ Prefer to start from a real extension? Copy one of these:
 - **`ai-summarize`** — summarizes the page with the on-device model and shows
   the result in a dialog, using `ai` + `storage` + `notifications` + `dialogs`.
   The reference for the `tabsage` API.
+- **`page-chatbot`** — ask the on-device AI questions about the current page and
+  read the answer in a dialog, using `ai` + `dialogs`.
+
+For the full developer guide — every API, permission, and example — see
+[DEVELOP.md](DEVELOP.md).
 
 Every extension needs a `manifest.json`:
 
