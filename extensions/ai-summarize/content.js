@@ -23,10 +23,34 @@
   var storageKey = "summary:" + location.href;
 
   function mainText() {
-    var root =
-      document.querySelector("article") ||
-      document.querySelector("main") ||
-      document.body;
+    // News/blog pages often have MANY <article> elements — the real story plus
+    // teaser/related-story cards. Blindly taking the first <article> can grab a
+    // tiny card (e.g. just a headline + "Read more At: <url>"), which then fails
+    // the length check below. So score every plausible content container by its
+    // visible text length and keep the richest one; fall back to <body> only if
+    // no semantic container exists.
+    var sels = [
+      "article",
+      "main",
+      "[role=main]",
+      ".article-body",
+      ".story-content",
+      ".entry-content",
+      "#content",
+    ];
+    var best = null;
+    var bestLen = 0;
+    sels.forEach(function (sel) {
+      var nodes = document.querySelectorAll(sel);
+      for (var i = 0; i < nodes.length; i++) {
+        var t = nodes[i].innerText ? nodes[i].innerText.trim() : "";
+        if (t.length > bestLen) {
+          best = nodes[i];
+          bestLen = t.length;
+        }
+      }
+    });
+    var root = best || document.body;
     return (root && root.innerText ? root.innerText : "").slice(0, 6000);
   }
 
