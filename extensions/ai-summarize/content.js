@@ -46,9 +46,15 @@
         showSummary("Not enough text on this page to summarize.");
         return;
       }
-      var summary = await tabsage.ai.prompt(
+      // Use the same local assistant the AI sidebar uses (chat template) for a
+      // cleaner, instruction-following summary.
+      var summary = await tabsage.ai.chat(
         "Summarize the following page in 3 short bullet points:\n\n" + text,
-        { maxTokens: 256 },
+        {
+          system:
+            "You are a concise summarizer. Reply with 3 short bullet points and nothing else.",
+          maxTokens: 256,
+        },
       );
       showSummary(summary);
       // Remember it so re-opening the page can show the last summary.
@@ -56,8 +62,16 @@
       if (tabsage.notify) tabsage.notify("AI Summarize", "Summary ready");
       console.log("AI Summarize: produced a summary");
     } catch (e) {
+      // Surface the real reason (e.g. the on-device model isn't downloaded /
+      // the runtime is still on "mock") instead of a generic failure.
+      var reason =
+        typeof e === "string" ? e : (e && (e.message || e.toString())) || "";
       console.error("AI Summarize failed:", e);
-      showSummary("Could not summarize this page.");
+      showSummary(
+        "Could not summarize this page.\n\n" +
+          (reason || "The on-device AI model may not be ready.") +
+          "\n\nTip: open Settings → Models, download the model, and set the AI runtime to “llama”.",
+      );
     } finally {
       btn.disabled = false;
       btn.textContent = "Summarize";

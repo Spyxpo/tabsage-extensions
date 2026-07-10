@@ -8,9 +8,16 @@
   border: 0;
   border-radius: 50%;
   background: #f59e0b;
-  font-size: 18px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+#ts-notes-toggle svg {
+  display: block;
 }
 
 #ts-notes {
@@ -42,9 +49,15 @@
 #ts-notes-close {
   border: 0;
   background: transparent;
-  font-size: 16px;
-  line-height: 1;
+  color: #92400e;
+  line-height: 0;
+  padding: 2px;
   cursor: pointer;
+  display: inline-flex;
+}
+
+#ts-notes-close svg {
+  display: block;
 }
 
 #ts-notes-text {

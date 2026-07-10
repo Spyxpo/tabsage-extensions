@@ -127,17 +127,23 @@ A small persistent store, namespaced to your extension id and scoped to the acti
 | `tabsage.storage.remove(key)` | `void` | |
 | `tabsage.storage.keys()` | `string[]` | All keys you've stored. |
 
-### `ai` — the on-device model
+### `ai` — the on-device model (the chatbot)
 
-Prompt the same local model that powers Tab Sage's assistant. Runs fully offline; no network, no accounts.
+The same local model that powers Tab Sage's AI sidebar. Runs fully offline; no network, no accounts. `chat` uses the assistant's chat template (better instruction-following — this is the "chatbot"); `prompt` is a raw completion.
 
 | Method | Returns | Notes |
 | --- | --- | --- |
-| `tabsage.ai.prompt(text, opts?)` | `string` | `opts.maxTokens` caps the reply (1–1024, default 512). Prompt is capped at 8000 chars. |
+| `tabsage.ai.chat(message, opts?)` | `string` | Assistant-style reply (same pipeline as the sidebar). `opts.system` sets the persona, `opts.maxTokens` caps the reply (1–1024, default 768). |
+| `tabsage.ai.prompt(text, opts?)` | `string` | Raw single-shot completion. `opts.maxTokens` (1–1024, default 512). |
 
 ```js
-const summary = await tabsage.ai.prompt("Summarize in one line: " + document.title);
+const summary = await tabsage.ai.chat("Summarize this page in 3 bullets:\n" + document.body.innerText.slice(0, 4000), {
+  system: "You are a concise summarizer.",
+  maxTokens: 200,
+});
 ```
+
+Both require the on-device model to be downloaded and the AI runtime set to "llama" (Settings → Models). Without a model they reject with a clear error you can show the user.
 
 ### `tabs` — tab metadata
 
@@ -171,9 +177,28 @@ if (await tabsage.dialog.confirm("Clear this site's notes?")) {
 }
 ```
 
+### `adblock` — the ad/content blocker
+
+Toggle Tab Sage's built-in ad blocker for the current tab, in place (no reload).
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `tabsage.adblock.enable()` | `void` | Turn the blocker on for this tab. |
+| `tabsage.adblock.disable()` | `void` | Turn it off for this tab. |
+| `tabsage.adblock.set(on)` | `void` | Set it to a boolean. |
+
+### `cutout` — element removal mode
+
+Start the "cutout" mode where the user clicks a section of the page to remove it (Escape exits). Same feature as the toolbar scissors button.
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `tabsage.cutout.start()` | `void` | Enter cutout mode on this tab. |
+| `tabsage.cutout.stop()` | `void` | Exit cutout mode. |
+
 ### Security model
 
-**Extensions cannot read or touch Tab Sage's saved passwords, autofill data, cookies, browsing history, bookmarks, or any security, privacy, or parental-control settings.** No permission grants any of that, and there is no command that exposes it. The full capability surface an extension can ever have is exactly the five `tabsage` groups documented above (`storage`, `ai`, `tabs`, `notifications`, `dialogs`) plus the ordinary DOM of the pages it matches — nothing more. The browser's own password/autofill vault runs in a separate mechanism that the `tabsage` API does not expose.
+**Extensions cannot read or touch Tab Sage's saved passwords, autofill data, cookies, browsing history, bookmarks, or any security, privacy, or parental-control settings.** No permission grants any of that, and there is no command that exposes it. The full capability surface an extension can ever have is exactly the seven `tabsage` groups documented above (`storage`, `ai`, `tabs`, `notifications`, `dialogs`, `adblock`, `cutout`) plus the ordinary DOM of the pages it matches — nothing more. The browser's own password/autofill vault runs in a separate mechanism that the `tabsage` API does not expose.
 
 Content scripts run in the page's own JavaScript world, not an isolated one, so the `tabsage` bridge is technically reachable by page script too. Because of that, the API deliberately exposes **no secret surfaces**:
 

@@ -1,11 +1,14 @@
 # Sticky Notes
 
-Adds a small 📝 button to the bottom-left of every page. Click it to open a
+Adds a small note button to the bottom-left of every page. Click it to open a
 notepad scoped to the current site (by hostname). Whatever you type is saved
 locally and comes back the next time you visit that site.
 
 Good for keeping a running to-do per dashboard, notes on a docs page, or a
 reminder on a site you check often.
+
+Icons are inline [Font Awesome Free](https://fontawesome.com/license/free)
+(CC BY 4.0) SVGs — embedded directly, so the extension stays dependency-free.
 
 ## What it touches
 
