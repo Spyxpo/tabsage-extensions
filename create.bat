@@ -69,7 +69,7 @@ if "%PERMISSIONS%"=="" set /p "PERMISSIONS=Permissions (comma-separated) [conten
 if "%PERMISSIONS%"=="" set "PERMISSIONS=content_scripts"
 if "%MATCHES%"=="" set /p "MATCHES=Match pattern [<all_urls>]: "
 if "%MATCHES%"=="" set "MATCHES=<all_urls>"
-if "%RUN_AT%"=="" set /p "RUN_AT=Run at (document_start^|document_end) [document_end]: "
+if "%RUN_AT%"=="" set /p "RUN_AT=Run at (document_start|document_end) [document_end]: "
 if "%RUN_AT%"=="" set "RUN_AT=document_end"
 
 rem --- validate ---------------------------------------------------------------
@@ -200,7 +200,7 @@ exit /b 0
 :write_content
 setlocal DisableDelayedExpansion
 set "f=%dest%\content.js"
-echo // %NAME% ^— %DESCRIPTION%>"%f%"
+echo // %NAME% — %DESCRIPTION%>"%f%"
 echo (function () {>>"%f%"
 echo   // Content scripts can run more than once per page (e.g. after in-page>>"%f%"
 echo   // navigation), so bail out if we already ran.>>"%f%"
@@ -246,6 +246,6 @@ echo !PERMISSIONS!>>"!f!"
 echo(>>"!f!"
 echo ## Changes>>"!f!"
 echo(>>"!f!"
-echo - 1.0.0 ^— Initial release.>>"!f!"
+echo - 1.0.0 — Initial release.>>"!f!"
 endlocal
 exit /b 0
