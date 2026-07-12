@@ -59,6 +59,11 @@
         gap: 10px;
         align-items: center;
       }
+      .demo-col {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
     </style>
   </head>
   <body>
@@ -87,6 +92,23 @@
           row.appendChild(n);
         });
         root.appendChild(row);
+        s.appendChild(root);
+        app.appendChild(s);
+      }
+
+      // Like section() but stacks nodes vertically (fills the width).
+      function stack(title, nodes) {
+        var s = document.createElement("section");
+        var h = document.createElement("h2");
+        h.textContent = title;
+        s.appendChild(h);
+        var root = U.root();
+        var col = document.createElement("div");
+        col.className = "demo-col";
+        nodes.forEach(function (n) {
+          col.appendChild(n);
+        });
+        root.appendChild(col);
         s.appendChild(root);
         app.appendChild(s);
       }
@@ -176,6 +198,104 @@
       });
 
       section("Overlays", [menuBtn, popBtn, modalBtn, toastBtn, ctxBtn]);
+
+      // Icons — the new Chrome-like glyphs
+      section(
+        "Icons",
+        [
+          "download",
+          "clipboard",
+          "bell",
+          "keyboard",
+          "layers",
+          "external-link",
+          "x-circle",
+          "refresh",
+        ].map(function (name) {
+          var b = U.iconButton({ icon: name, title: name });
+          return b;
+        }),
+      );
+
+      // List (open tabs / storage entries)
+      stack("List", [
+        U.list({
+          items: [
+            {
+              icon: "layers",
+              label: "GitHub — Spyxpo/tabsage-extensions",
+              sublabel: "github.com",
+              trailing: U.badge("active"),
+              onClick: function () {
+                U.toast("Switched tab", { variant: "ok" });
+              },
+            },
+            {
+              icon: "bookmark",
+              label: "Tab Sage docs",
+              sublabel: "docs.tabsage.dev",
+              trailing: U.iconButton({ icon: "external-link", title: "Open" }),
+              onClick: noop,
+            },
+            {
+              icon: "clipboard",
+              label: "storage: recentSummaries",
+              sublabel: "12 entries · 4.2 KB",
+              trailing: U.kbd("Ctrl+K"),
+            },
+          ],
+        }),
+      ]);
+
+      // Fields + section + divider inside a card
+      var fieldsRoot = U.root();
+      var s = U.section({
+        title: "Preferences",
+        children: [
+          U.field({
+            label: "Summary length",
+            control: U.select({
+              options: [
+                { value: "s", label: "Short" },
+                { value: "m", label: "Medium" },
+                { value: "l", label: "Long" },
+              ],
+              value: "m",
+            }),
+            hint: "How much detail the AI summary includes.",
+          }),
+          U.divider(),
+          U.field({
+            label: "Notifications",
+            control: U.switch({ label: "Notify on finish", checked: true }),
+            hint: "Show a toast when a background job completes.",
+          }),
+          U.field({
+            label: "Shortcut",
+            control: U.input({ placeholder: "Press keys…", value: "Ctrl+Shift+S" }),
+          }),
+        ],
+      });
+      fieldsRoot.appendChild(s);
+      stack("Fields, section & divider", [fieldsRoot]);
+
+      // Notices / banners
+      stack("Notices", [
+        U.notice({ text: "Extension host connected.", variant: "ok" }),
+        U.notice({ text: "Summaries are cached for this session.", variant: "info" }),
+        U.notice({ text: "Storage is nearly full (92%).", variant: "warn" }),
+        U.notice({ text: "Permission denied for this origin.", variant: "danger" }),
+      ]);
+
+      // Spinners + keyboard hints
+      section("Spinner & kbd", [
+        U.spinner({ size: 16 }),
+        U.spinner({ size: 24 }),
+        U.spinner({ size: 32 }),
+        U.kbd("Ctrl+K"),
+        U.kbd("⌘+Shift+P"),
+        U.kbd("Esc"),
+      ]);
 
       // A corner launcher (bottom-right → its menu drops UP automatically)
       U.launcher({

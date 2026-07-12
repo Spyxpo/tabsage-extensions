@@ -15,21 +15,43 @@
     return badge;
   }
 
-  function update() {
-    var sel = String(window.getSelection ? window.getSelection() : "");
-    var trimmed = sel.trim();
-    var b = ensureBadge();
-    if (!trimmed) {
-      // Idle hint so the badge is always visible (and can be highlighted from
-      // the toolbar), not only while text is selected.
-      b.textContent = "Select text to count";
-      b.classList.add("is-idle");
-      return;
+  // Prefer the host's page.selection() (always available, no permission needed);
+  // fall back to window.getSelection so the badge still works outside Tab Sage.
+  function readSelection() {
+    if (
+      typeof tabsage !== "undefined" &&
+      tabsage.page &&
+      tabsage.page.selection
+    ) {
+      return tabsage.page.selection().catch(function () {
+        return String(window.getSelection ? window.getSelection() : "");
+      });
     }
-    var words = trimmed.split(/\s+/).length;
-    b.classList.remove("is-idle");
-    b.textContent =
-      words + (words === 1 ? " word" : " words") + " · " + sel.length + " chars";
+    return Promise.resolve(
+      String(window.getSelection ? window.getSelection() : ""),
+    );
+  }
+
+  function update() {
+    readSelection().then(function (sel) {
+      var trimmed = (sel || "").trim();
+      var b = ensureBadge();
+      if (!trimmed) {
+        // Idle hint so the badge is always visible (and can be highlighted from
+        // the toolbar), not only while text is selected.
+        b.textContent = "Select text to count";
+        b.classList.add("is-idle");
+        return;
+      }
+      var words = trimmed.split(/\s+/).length;
+      b.classList.remove("is-idle");
+      b.textContent =
+        words +
+        (words === 1 ? " word" : " words") +
+        " · " +
+        sel.length +
+        " chars";
+    });
   }
 
   document.addEventListener("selectionchange", update);

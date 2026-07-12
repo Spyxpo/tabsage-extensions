@@ -17,6 +17,11 @@ extension working, and how to test and submit it. For a shorter overview see
   - [`dialogs`](#dialogs)
   - [`adblock`](#adblock)
   - [`cutout`](#cutout)
+  - [`clipboard`](#clipboard)
+  - [`downloads`](#downloads)
+  - [`badge`](#badge)
+  - [`messaging`](#messaging)
+  - [`page`, `runtime`, `shortcuts`](#page-runtime-shortcuts)
 - [Seeing your extension work](#seeing-your-extension-work)
 - [UI placement](#ui-placement)
 - [The UI Kit](#ui-kit)
@@ -114,6 +119,13 @@ one group of the `tabsage` API:
 | `dialogs` | `tabsage.dialogs` — alert/confirm/prompt modals. |
 | `adblock` | `tabsage.adblock` — toggle the blocker on this tab. |
 | `cutout` | `tabsage.cutout` — element removal mode on this tab. |
+| `clipboard` | `tabsage.clipboard` — read/write the system clipboard. |
+| `downloads` | `tabsage.downloads` — hand a URL to the browser's Downloads panel. |
+| `badge` | `tabsage.badge` — a badge on this extension's toolbar-menu row. |
+| `messaging` | `tabsage.messaging` — cross-tab pub/sub within this extension. |
+
+The `page`, `runtime`, and `shortcuts` groups need **no permission** — they ride
+`content_scripts` and are always on `tabsage` in any content script.
 
 A manifest requesting an unknown permission is rejected at install time.
 
@@ -158,12 +170,22 @@ if (typeof tabsage !== "undefined" && tabsage.ai) {
 }
 ```
 
-Every method returns a Promise. All data stays on the device.
+Every method returns a Promise. All data stays on the device. (The `runtime`
+group is the exception: its members are plain, synchronous values, not Promises.)
+
+Tab Sage runs on macOS, Windows, and Linux, and the extension API is identical on
+all three. For keyboard shortcuts, prefer the `Mod` accelerator so a single
+binding works everywhere — it matches Cmd on macOS and Ctrl on Windows and Linux.
 
 > **Method names (v1.1).** The surface was made consistent: `ai.complete` (was
 > `ai.prompt`), `notifications.show(...)` (was `notify(...)`), `dialogs.*` (was
 > `dialog.*`), and `cutout.enable/disable` (was `start/stop`). The old names
 > still work as deprecated aliases; use the canonical names below in new code.
+>
+> **New in v1.2.** `storage` gained `getAll`/`clear`/`getJSON`/`setJSON`; `tabs`
+> gained `reload`/`activate`/`close`; `notifications.show` takes an `opts.timeout`;
+> and there are new groups `clipboard`, `downloads`, `badge`, and `messaging`,
+> plus the always-on `page`, `runtime`, and `shortcuts` (no permission required).
 
 ### `storage`
 
@@ -176,6 +198,10 @@ profile. Values are strings (stringify your own JSON). Survives reloads.
 | `tabsage.storage.set(key, value)` | `void` (value ≤ 64 KB) |
 | `tabsage.storage.remove(key)` | `void` |
 | `tabsage.storage.keys()` | `string[]` |
+| `tabsage.storage.getAll()` | `object` — every entry as `{ [key]: value }` |
+| `tabsage.storage.clear()` | `void` — removes all of this extension's keys |
+| `tabsage.storage.getJSON(key)` | `any \| null` — parses stored JSON (null if absent/invalid) |
+| `tabsage.storage.setJSON(key, value)` | `void` — JSON-stringifies `value` (≤ 64 KB) |
 
 ```js
 await tabsage.storage.set("count", "1");
@@ -229,12 +255,15 @@ plus opening a tab.
 | `tabsage.tabs.current()` | `{ id, url, title }` | The tab your script runs in. |
 | `tabsage.tabs.list()` | `{ id, url, title, active }[]` | All open tabs. |
 | `tabsage.tabs.open(url)` | `void` | `http`/`https` only. |
+| `tabsage.tabs.reload()` | `void` | Reloads the tab this script runs in. |
+| `tabsage.tabs.activate(id)` | `void` | Focus a tab by an `id` from `list()`. |
+| `tabsage.tabs.close(id)` | `void` | Close a tab by an `id` from `list()`. |
 
 ### `notifications`
 
 | Method | Returns |
 | --- | --- |
-| `tabsage.notifications.show(title, body)` | `void` (a short toast) |
+| `tabsage.notifications.show(title, body, opts?)` | `void` (a short toast). `opts.timeout` = display time in ms (500–15000). |
 
 Alias: `tabsage.notify(title, body)`.
 
@@ -278,6 +307,108 @@ Start the mode where the user clicks a page section to remove it (Escape exits).
 
 Aliases: `cutout.start()` / `cutout.stop()`.
 
+### `clipboard`
+
+Read and write plain text on the system clipboard.
+
+| Method | Returns |
+| --- | --- |
+| `tabsage.clipboard.writeText(text)` | `void` (falls back to a hidden textarea where needed) |
+| `tabsage.clipboard.readText()` | `string` (may reject where the browser blocks clipboard reads) |
+
+```js
+await tabsage.clipboard.writeText(document.title);
+```
+
+### `downloads`
+
+Hand a URL to the browser's own Downloads panel.
+
+| Method | Returns |
+| --- | --- |
+| `tabsage.downloads.download(url, filename?)` | `void` — accepts `http(s):`, `blob:`, or `data:` URLs (other schemes rejected); triggers a native anchor-click |
+
+```js
+const blob = new Blob([document.body.innerText], { type: "text/plain" });
+await tabsage.downloads.download(URL.createObjectURL(blob), "page.txt");
+```
+
+### `badge`
+
+A small badge on this extension's row in the toolbar puzzle-icon menu.
+
+| Method | Returns |
+| --- | --- |
+| `tabsage.badge.set(text, color?)` | `void` — text clipped to 6 chars (empty clears); `color` is a CSS color (hex/name/`rgb()`) |
+| `tabsage.badge.clear()` | `void` |
+| `tabsage.badge.setColor(color)` | `void` — recolor the current text |
+
+```js
+await tabsage.badge.set("3", "#e11d48");
+```
+
+### `messaging`
+
+A tiny pub/sub bus carrying JSON between this extension's content scripts in every
+open tab. Messages stay within your extension id — nothing routes to another
+extension.
+
+| Method | Returns |
+| --- | --- |
+| `tabsage.messaging.send(channel, data)` | `void` — broadcasts JSON-serializable `data` to every open tab, including the sender's own |
+| `tabsage.messaging.onMessage(channel, handler)` | `function` — subscribes `handler(data, channel)`; returns an unsubscribe function |
+
+```js
+const off = tabsage.messaging.onMessage("ping", (data) => console.log(data));
+await tabsage.messaging.send("ping", { at: Date.now() });
+// later: off();
+```
+
+### `page`, `runtime`, `shortcuts`
+
+These three groups need **no permission** — they ride `content_scripts` and are
+present on `tabsage` in every content script.
+
+**`page`** — the current page's text and metadata:
+
+| Method | Returns |
+| --- | --- |
+| `tabsage.page.text()` | `string` — `document.body.innerText`, trimmed |
+| `tabsage.page.html()` | `string` — `documentElement.outerHTML` |
+| `tabsage.page.selection()` | `string` — the current selection text |
+| `tabsage.page.meta()` | `{ title, url, description, lang, wordCount, favicon }` |
+
+**`runtime`** — your own manifest. Unlike the rest of the API, these are
+**synchronous** — plain values and properties, not Promises:
+
+| Member | Returns |
+| --- | --- |
+| `tabsage.runtime.id` | `string` (property) |
+| `tabsage.runtime.version` | `string` (property) |
+| `tabsage.runtime.name` | `string` (property) |
+| `tabsage.runtime.manifest` | `{ id, name, version, permissions }` (property) |
+| `tabsage.runtime.getManifest()` | `{ id, name, version, permissions }` (same object) |
+| `tabsage.runtime.hasPermission(p)` | `boolean` |
+
+**`shortcuts`** — keyboard accelerators:
+
+| Method | Returns |
+| --- | --- |
+| `tabsage.shortcuts.register(accelerator, handler)` | `function` — runs `handler(event)` on keydown (preventDefault applied); returns an unregister function |
+| `tabsage.shortcuts.unregister(accelerator)` | `void` |
+
+Accelerators are `+`-separated and case-insensitive: modifiers `Ctrl`/`Control`,
+`Cmd`/`Meta`/`Super`/`Win`, `Alt`/`Option`, `Shift`, and `Mod` (matches **either**
+Cmd or Ctrl — prefer it for cross-platform bindings), then the key — e.g.
+`"Mod+K"`, `"Ctrl+Shift+K"`, `"Cmd+/"`, `"Alt+Enter"`.
+
+```js
+const off = tabsage.shortcuts.register("Mod+K", () => {
+  console.log("Selected:", tabsage.page.selection());
+});
+// later: off();
+```
+
 ## Seeing your extension work
 
 Open **Settings → Extensions** and click your extension. The detail panel shows:
@@ -307,6 +438,8 @@ different corners so they don't collide:
 | `ai-summarize` | bottom-right |
 | `sticky-notes` | bottom-left |
 | `word-count` | bottom-center |
+| `clipboard-tools` | top-center |
+| `tab-switcher` | center-right |
 
 Prefix your element ids/classes (e.g. `ts-myext-…`) so they don't clash with the
 page or other extensions.
@@ -326,16 +459,18 @@ follows the OS light/dark setting on its own.
 
 ### Install (via GitHub Releases)
 
-The kit ships as release assets on tags named `ui-v*`. Three ways to get it:
+The kit ships as release assets on tags named `ui-v*`. Three ways to get it. (The
+`tabsage` CLI isn't published to npm yet — run it locally with `node cli/tabsage.mjs`
+from a clone of this repo. Once published, `npx @tabsage/cli` will work identically.)
 
 ```bash
 # 1. Scaffold a new extension already wired for the kit
 ./create.sh --id my-ext --name "My Ext" --description "…" --author "You" --ui
-npx @tabsage/cli new my-ext --author "You" --ui
+node cli/tabsage.mjs new my-ext --author "You" --ui
 
 # 2. Add it to an existing extension folder (pins the latest ui-v* release)
-npx @tabsage/cli ui add extensions/my-ext
-npx @tabsage/cli ui add extensions/my-ext --version ui-v1.0.0
+node cli/tabsage.mjs ui add extensions/my-ext
+node cli/tabsage.mjs ui add extensions/my-ext --version ui-v1.0.0
 
 # 3. By hand: download tabsage-ui.min.js from a release and save it as
 #    extensions/my-ext/tabsage-ui.js
@@ -349,7 +484,7 @@ Then list it **before** your own script so `TabSageUI` exists when it runs:
 ]
 ```
 
-Pin a specific `ui-v*` version and re-vendor deliberately (`tabsage ui update`) —
+Pin a specific `ui-v*` version and re-vendor deliberately (`node cli/tabsage.mjs ui update`) —
 the file lives in your extension folder, so nothing changes under you. Because a
 vendored `tabsage-ui.js` sits inside your own `extensions/<id>/` folder and is
 referenced from your manifest, it passes the PR check like any other file.
@@ -486,8 +621,28 @@ A minimal AI extension that answers a question about the page in a dialog
 })();
 ```
 
+A second example uses three of the newer groups: a keyboard shortcut (no
+permission) that copies the page title to the clipboard and flashes a badge
+(`permissions: ["content_scripts", "clipboard", "badge"]`):
+
+```js
+(function () {
+  if (window.__copyTitleRan) return;
+  window.__copyTitleRan = true;
+  if (typeof tabsage === "undefined" || !tabsage.clipboard || !tabsage.badge) return;
+
+  // Mod matches Cmd on macOS and Ctrl on Windows/Linux.
+  tabsage.shortcuts.register("Mod+Shift+C", async function () {
+    await tabsage.clipboard.writeText(document.title);
+    await tabsage.badge.set("OK", "#16a34a");
+    setTimeout(function () { tabsage.badge.clear(); }, 1500);
+  });
+})();
+```
+
 See the `extensions/` folder for the full working versions: `reading-time`,
-`word-count`, `sticky-notes`, `ai-summarize`, and `page-chatbot`.
+`word-count`, `sticky-notes`, `ai-summarize`, `page-chatbot`, `clipboard-tools`
+(clipboard + badge + shortcuts), and `tab-switcher` (tabs control + messaging).
 
 ## Submitting
 

@@ -1,0 +1,41 @@
+/* Top-center so it doesn't collide with the other example extensions' corners. */
+.ts-cliptools {
+  position: fixed;
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.92);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  font: 600 12px/1 system-ui, sans-serif;
+}
+
+.ts-cliptools-tag {
+  color: #9ca3af;
+  padding: 0 4px 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ts-cliptools-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #374151;
+  color: #f9fafb;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ts-cliptools-btn:hover {
+  background: #4b5563;
+}
+
+.ts-cliptools-btn:active {
+  background: #16a34a;
+}

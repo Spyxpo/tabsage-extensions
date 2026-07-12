@@ -54,13 +54,18 @@ instead; any field you leave off the command line is asked for interactively.
 It creates `extensions/<id>/` with a `manifest.json`, a guarded `content.js`, a
 `style.css`, and a `README.md` ready to fill in. Valid permissions are
 `content_scripts` (required), `storage`, `ai`, `tabs`, `notifications`,
-`dialogs`, `adblock`, and `cutout`.
+`dialogs`, `adblock`, `cutout`, `clipboard`, `downloads`, `badge`, and
+`messaging`. (The `page`, `runtime`, and `shortcuts` groups need no permission —
+they ride `content_scripts` and are always available.)
 
-There's also a `tabsage` CLI if you'd rather not clone this repo:
+There's also a `tabsage` CLI. It isn't published to npm yet — run it locally with
+`node cli/tabsage.mjs` from a clone of this repo. Once published,
+`npx @tabsage/cli` will work identically.
 
 ```bash
-npx @tabsage/cli new my-extension --author "Your Name"       # scaffold
-npx @tabsage/cli new my-extension --author "Your Name" --ui  # + Tab Sage UI Kit
+# run from the repo root
+node cli/tabsage.mjs new my-extension --author "Your Name"       # scaffold
+node cli/tabsage.mjs new my-extension --author "Your Name" --ui  # + Tab Sage UI Kit
 ```
 
 Add `--ui` to either the scaffolder or the CLI to start with the **Tab Sage UI
@@ -77,6 +82,10 @@ Prefer to start from a real extension? Copy one of these:
   The reference for the `tabsage` API.
 - **`page-chatbot`** — ask the on-device AI questions about the current page and
   read the answer in a dialog, using `ai` + `dialogs`.
+- **`clipboard-tools`** — copy the page title or selection with a keyboard
+  shortcut and flash a badge, using `clipboard` + `badge` + `shortcuts`.
+- **`tab-switcher`** — list, focus, and close tabs and coordinate across them,
+  using `tabs` control + `messaging`.
 
 For the full developer guide — every API, permission, and example — see
 [DEVELOP.md](DEVELOP.md).
@@ -111,7 +120,7 @@ Every extension needs a `manifest.json`:
 | `description` | yes | One or two sentences describing what the extension does. |
 | `author` | yes | Your name or handle. |
 | `homepage` | no | Link to your site or profile. |
-| `permissions` | yes | What the extension needs. `content_scripts` is required to inject anything; add `storage`, `ai`, `tabs`, `notifications`, `dialogs`, `adblock`, and/or `cutout` to use the matching parts of the `tabsage` API (see [The tabsage API](#the-tabsage-api)). |
+| `permissions` | yes | What the extension needs. `content_scripts` is required to inject anything; add `storage`, `ai`, `tabs`, `notifications`, `dialogs`, `adblock`, `cutout`, `clipboard`, `downloads`, `badge`, and/or `messaging` to use the matching parts of the `tabsage` API (see [The tabsage API](#the-tabsage-api)). The `page`, `runtime`, and `shortcuts` groups need no permission — they're always available. |
 | `content_scripts` | yes | Which scripts and styles run on which pages. See below. |
 
 Each entry in `content_scripts` takes:
@@ -164,7 +173,7 @@ TabSageUI.launcher({
 });
 ```
 
-Get it with the CLI (`npx @tabsage/cli ui add extensions/my-ext`, or
+Get it with the CLI (`node cli/tabsage.mjs ui add extensions/my-ext`, or
 `--version ui-v1.0.0` to pin), scaffold a new extension already wired for it with
 `--ui`, or download `tabsage-ui.min.js` from a
 [release](https://github.com/Spyxpo/tabsage-extensions/releases) by hand. The
@@ -185,13 +194,23 @@ if (typeof tabsage !== "undefined" && tabsage.storage) {
 }
 ```
 
-Every method returns a Promise. All data stays on the device.
+Every method returns a Promise. All data stays on the device. (The `runtime`
+group is the exception — its members are plain, synchronous values.)
+
+Tab Sage runs on macOS, Windows, and Linux, and the extension API is identical on
+all three. For keyboard shortcuts, prefer the `Mod` accelerator so a single
+binding works everywhere — it matches Cmd on macOS and Ctrl on Windows and Linux.
 
 > **Method names (v1.1):** the API was tidied for consistency — `ai.complete`
 > (was `ai.prompt`), `notifications.show(...)` (was `notify(...)`), `dialogs.*`
 > (was `dialog.*`), and `cutout.enable/disable` (was `start/stop`). The old
 > names still work as deprecated aliases, so existing extensions keep running,
 > but new code should use the names below.
+>
+> **New in v1.2:** `storage` gained `getAll`/`clear`/`getJSON`/`setJSON`; `tabs`
+> gained `reload`/`activate`/`close`; `notifications.show` takes an `opts.timeout`;
+> and there are new groups `clipboard`, `downloads`, `badge`, and `messaging`,
+> plus the always-on `page`, `runtime`, and `shortcuts` (no permission required).
 
 ### `storage` — per-extension key/value
 
@@ -203,6 +222,10 @@ A small persistent store, namespaced to your extension id and scoped to the acti
 | `tabsage.storage.set(key, value)` | `void` | Value must be a string ≤ 64 KB. |
 | `tabsage.storage.remove(key)` | `void` | |
 | `tabsage.storage.keys()` | `string[]` | All keys you've stored. |
+| `tabsage.storage.getAll()` | `object` | Every entry at once, as `{ [key]: value }`. |
+| `tabsage.storage.clear()` | `void` | Removes all of this extension's keys. |
+| `tabsage.storage.getJSON(key)` | `any \| null` | Parses the stored JSON; null if absent or invalid. |
+| `tabsage.storage.setJSON(key, value)` | `void` | JSON-stringifies `value` (still ≤ 64 KB). |
 
 ### `ai` — the on-device model (the chatbot)
 
@@ -231,12 +254,15 @@ Read-only page/tab information plus opening a new tab. Metadata only — never h
 | `tabsage.tabs.current()` | `{ id, url, title }` | The tab your script runs in (resolved in-page). |
 | `tabsage.tabs.list()` | `{ id, url, title, active }[]` | All open tabs. |
 | `tabsage.tabs.open(url)` | `void` | Opens a new tab. `http`/`https` only. |
+| `tabsage.tabs.reload()` | `void` | Reloads the tab this script runs in (in-page). |
+| `tabsage.tabs.activate(id)` | `void` | Focus a tab by an `id` from `list()`. |
+| `tabsage.tabs.close(id)` | `void` | Close a tab by an `id` from `list()`. |
 
 ### `notifications` — a toast
 
 | Method | Returns | Notes |
 | --- | --- | --- |
-| `tabsage.notifications.show(title, body)` | `void` | Shows a short toast in the browser UI. Alias: `tabsage.notify(title, body)`. |
+| `tabsage.notifications.show(title, body, opts?)` | `void` | Shows a short toast in the browser UI. `opts.timeout` sets how long it stays, in ms (500–15000). Alias: `tabsage.notify(title, body)`. |
 
 ### `dialogs` — modal alert / confirm / prompt
 
@@ -275,9 +301,114 @@ Start the "cutout" mode where the user clicks a section of the page to remove it
 | `tabsage.cutout.enable()` | `void` | Enter cutout mode on this tab. Alias: `cutout.start()`. |
 | `tabsage.cutout.disable()` | `void` | Exit cutout mode. Alias: `cutout.stop()`. |
 
+### `clipboard` — read/write the system clipboard
+
+Read and write plain text on the system clipboard. Requires the `clipboard`
+permission.
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `tabsage.clipboard.writeText(text)` | `void` | Writes text to the clipboard (async Clipboard API; falls back to a hidden textarea where needed). |
+| `tabsage.clipboard.readText()` | `string` | The clipboard's text. May reject where the browser blocks clipboard reads. |
+
+```js
+await tabsage.clipboard.writeText(document.title);
+```
+
+### `downloads` — save a file
+
+Hand a URL to the browser's own Downloads panel. Requires the `downloads`
+permission.
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `tabsage.downloads.download(url, filename?)` | `void` | Downloads a `http(s):`, `blob:`, or `data:` URL via a native anchor-click, so the browser's Downloads panel handles it. Other URL schemes are rejected. `filename` suggests a name. |
+
+```js
+const blob = new Blob([document.body.innerText], { type: "text/plain" });
+await tabsage.downloads.download(URL.createObjectURL(blob), "page.txt");
+```
+
+### `badge` — a badge on your toolbar row
+
+Show a small badge on this extension's row in the toolbar puzzle-icon menu.
+Requires the `badge` permission.
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `tabsage.badge.set(text, color?)` | `void` | Sets the badge text (clipped to 6 chars; empty text clears it). `color` is a simple CSS color (hex/name/`rgb()`). |
+| `tabsage.badge.clear()` | `void` | Clears the badge. |
+| `tabsage.badge.setColor(color)` | `void` | Recolors the current badge text. |
+
+```js
+await tabsage.badge.set("3", "#e11d48");
+```
+
+### `messaging` — talk between your tabs
+
+A tiny pub/sub bus that carries JSON between this extension's content scripts in
+every open tab. Messages stay within your extension id — no other extension sees
+them. Requires the `messaging` permission.
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `tabsage.messaging.send(channel, data)` | `void` | Broadcasts JSON-serializable `data` to this extension's scripts in every open tab, including the sender's own. |
+| `tabsage.messaging.onMessage(channel, handler)` | `function` | Subscribes `handler(data, channel)`; returns an unsubscribe function. |
+
+```js
+const off = tabsage.messaging.onMessage("ping", (data) => console.log(data));
+await tabsage.messaging.send("ping", { at: Date.now() });
+// later: off();
+```
+
+### `page`, `runtime`, `shortcuts` — always on (no permission)
+
+These three groups need **no permission** — they ride `content_scripts` and are
+present on `tabsage` in every content script.
+
+**`page`** reads the current page's text and metadata:
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `tabsage.page.text()` | `string` | `document.body.innerText`, trimmed. |
+| `tabsage.page.html()` | `string` | `documentElement.outerHTML`. |
+| `tabsage.page.selection()` | `string` | The current selection text. |
+| `tabsage.page.meta()` | `{ title, url, description, lang, wordCount, favicon }` | Page metadata. |
+
+**`runtime`** exposes your own manifest. Unlike the rest of the API these are
+**synchronous** — plain values and properties, not Promises:
+
+| Member | Returns | Notes |
+| --- | --- | --- |
+| `tabsage.runtime.id` | `string` | Property. |
+| `tabsage.runtime.version` | `string` | Property. |
+| `tabsage.runtime.name` | `string` | Property. |
+| `tabsage.runtime.manifest` | `{ id, name, version, permissions }` | Property. |
+| `tabsage.runtime.getManifest()` | `{ id, name, version, permissions }` | Returns the same object. |
+| `tabsage.runtime.hasPermission(p)` | `boolean` | Whether permission `p` was granted. |
+
+**`shortcuts`** registers keyboard accelerators:
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `tabsage.shortcuts.register(accelerator, handler)` | `function` | Runs `handler(event)` on keydown (preventDefault is applied automatically); returns an unregister function. |
+| `tabsage.shortcuts.unregister(accelerator)` | `void` | Removes a binding. |
+
+Accelerators are `+`-separated and case-insensitive: modifiers `Ctrl`/`Control`,
+`Cmd`/`Meta`/`Super`/`Win`, `Alt`/`Option`, `Shift`, and `Mod` (matches **either**
+Cmd or Ctrl — prefer it so one binding works on every platform), then the key —
+e.g. `"Mod+K"`, `"Ctrl+Shift+K"`, `"Cmd+/"`, `"Alt+Enter"`.
+
+```js
+const off = tabsage.shortcuts.register("Mod+K", () => {
+  console.log("Selected:", tabsage.page.selection());
+});
+// later: off();
+```
+
 ### Security model
 
-**Extensions cannot read or touch Tab Sage's saved passwords, autofill data, cookies, browsing history, bookmarks, or any security, privacy, or parental-control settings.** No permission grants any of that, and there is no command that exposes it. The full capability surface an extension can ever have is exactly the seven `tabsage` groups documented above (`storage`, `ai`, `tabs`, `notifications`, `dialogs`, `adblock`, `cutout`) plus the ordinary DOM of the pages it matches — nothing more. The browser's own password/autofill vault runs in a separate mechanism that the `tabsage` API does not expose.
+**Extensions cannot read or touch Tab Sage's saved passwords, autofill data, cookies, browsing history, bookmarks, or any security, privacy, or parental-control settings.** No permission grants any of that, and there is no command that exposes it. The full capability surface an extension can ever have is exactly the `tabsage` groups documented above — the permission-gated `storage`, `ai`, `tabs`, `notifications`, `dialogs`, `adblock`, `cutout`, `clipboard`, `downloads`, `badge`, and `messaging`, plus the always-on `page`, `runtime`, and `shortcuts` — plus the ordinary DOM of the pages it matches, and nothing more. `clipboard` and `downloads` grant only the same clipboard and download access a page's own scripts already have; the permission simply makes the use declared and auditable. The browser's own password/autofill vault runs in a separate mechanism that the `tabsage` API does not expose.
 
 Content scripts run in the page's own JavaScript world, not an isolated one, so the `tabsage` bridge is technically reachable by page script too. Because of that, the API deliberately exposes **no secret surfaces**:
 

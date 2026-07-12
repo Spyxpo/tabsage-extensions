@@ -33,6 +33,10 @@ const KNOWN_PERMISSIONS = [
   "dialogs",
   "adblock",
   "cutout",
+  "clipboard",
+  "downloads",
+  "badge",
+  "messaging",
 ];
 const VERSION_RE = /^\d+\.\d+\.\d+$/;
 const ID_RE = /^[a-z0-9-]+$/;

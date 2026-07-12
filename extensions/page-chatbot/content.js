@@ -1,6 +1,7 @@
 // Page Chatbot: a floating chat button. Ask a question about the current page;
 // the on-device AI (same model as the sidebar) answers, and the reply is shown
-// in a dialog. Demonstrates combining tabsage.ai.chat with tabsage.dialogs.
+// in a dialog. Demonstrates combining tabsage.ai.chat with tabsage.dialogs, and
+// grounding the answer with the always-on page group (page.selection / page.text).
 (function () {
   if (window.__tsPageChatbot) return;
   window.__tsPageChatbot = true;
@@ -12,11 +13,12 @@
 
   console.log("Page Chatbot ready on", location.href);
 
-  function pageText() {
-    // News/blog pages often have MANY <article> elements — the real story plus
-    // teaser/related-story cards — so the first <article> can be a tiny card.
-    // Score every plausible content container by visible text length and keep
-    // the richest one; fall back to <body> only if no semantic container exists.
+  // Fallback text scraper for builds without the always-on `page` group.
+  // News/blog pages often have MANY <article> elements — the real story plus
+  // teaser/related-story cards — so the first <article> can be a tiny card.
+  // Score every plausible content container by visible text length and keep the
+  // richest one; fall back to <body>.
+  function scrapeText() {
     var sels = [
       "article",
       "main",
@@ -39,7 +41,28 @@
       }
     });
     var root = best || document.body;
-    return (root && root.innerText ? root.innerText : "").slice(0, 5000);
+    return root && root.innerText ? root.innerText : "";
+  }
+
+  // Ground the answer in what the user cares about: if there's a text selection,
+  // use just that; otherwise use the whole page. Prefers the host `page` group
+  // (no permission), falling back to the DOM. Returns { text, scope }.
+  async function pageContext() {
+    var P = tabsage.page;
+    if (P && P.selection) {
+      try {
+        var sel = ((await P.selection()) || "").trim();
+        if (sel) return { text: sel.slice(0, 5000), scope: "selection" };
+      } catch (e) {}
+    }
+    if (P && P.text) {
+      try {
+        return { text: (await P.text()).slice(0, 5000), scope: "page" };
+      } catch (e) {
+        console.warn("page.text() unavailable, scraping instead:", e);
+      }
+    }
+    return { text: scrapeText().slice(0, 5000), scope: "page" };
   }
 
   // True when an IPC rejection means the host lacks the newer `ai.chat`
@@ -85,12 +108,18 @@
     btn.disabled = true;
     btn.textContent = "…";
     try {
-      // 2) Ask the on-device assistant, grounding it in the page text.
+      // 2) Grab the grounding text (selection if any, else the whole page).
+      var ctx = await pageContext();
+      var label = ctx.scope === "selection" ? "Selected text" : "Page content";
+      // 3) Ask the on-device assistant, grounding it in that text.
       //    Falls back to ai.complete on builds without ai.chat.
       var answer = await aiRespond(
-        "Page content:\n" +
-          pageText() +
-          "\n\nBased only on the page above, answer: " +
+        label +
+          ":\n" +
+          ctx.text +
+          "\n\nBased only on the " +
+          ctx.scope +
+          " above, answer: " +
           question,
         {
           system:
@@ -98,7 +127,7 @@
           maxTokens: 400,
         },
       );
-      // 3) Show the reply in a dialog.
+      // 4) Show the reply in a dialog.
       await tabsage.dialogs.alert(answer, "Page Chatbot");
     } catch (e) {
       var reason =
@@ -119,6 +148,14 @@
   var btn = document.createElement("button");
   btn.id = "ts-chatbot-btn";
   btn.textContent = "Ask AI";
+  btn.title = "Ask about this page (Mod+Shift+A)";
   btn.addEventListener("click", ask);
   document.body.appendChild(btn);
+
+  // Open the ask box from the keyboard (shortcuts need no permission).
+  if (tabsage.shortcuts && tabsage.shortcuts.register) {
+    tabsage.shortcuts.register("Mod+Shift+A", function () {
+      if (!btn.disabled) ask();
+    });
+  }
 })();

@@ -1,0 +1,22 @@
+{
+  "id": "clipboard-tools",
+  "name": "Clipboard Tools",
+  "version": "1.0.0",
+  "description": "A small floating toolbar to copy the page title, URL, or your current selection to the clipboard in one click.",
+  "author": "Spyxpo",
+  "homepage": "https://github.com/Spyxpo/tabsage-extensions",
+  "permissions": [
+    "content_scripts",
+    "clipboard",
+    "badge",
+    "notifications"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["style.css"],
+      "run_at": "document_end"
+    }
+  ]
+}

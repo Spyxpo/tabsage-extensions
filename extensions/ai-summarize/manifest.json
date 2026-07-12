@@ -1,7 +1,7 @@
 {
   "id": "ai-summarize",
   "name": "AI Summarize",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Adds a button that summarizes the current article with Tab Sage's on-device AI and remembers the last summary per page.",
   "author": "Spyxpo",
   "homepage": "https://github.com/Spyxpo",

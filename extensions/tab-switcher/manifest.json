@@ -1,0 +1,21 @@
+{
+  "id": "tab-switcher",
+  "name": "Tab Switcher",
+  "version": "1.0.0",
+  "description": "A launcher that lists every open tab so you can jump to, reload, or close tabs, and ping your other tabs to see how many are open.",
+  "author": "Spyxpo",
+  "homepage": "https://github.com/Spyxpo/tabsage-extensions",
+  "permissions": [
+    "content_scripts",
+    "tabs",
+    "messaging"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["style.css"],
+      "run_at": "document_end"
+    }
+  ]
+}

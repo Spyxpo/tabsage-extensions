@@ -286,6 +286,126 @@
     }
   }
 
+  /* ── list (open tabs, storage entries, settings rows) ────────────────── */
+  function listItem(o) {
+    o = o || {};
+    var clickable = typeof o.onClick === "function";
+    var n = el(
+      clickable ? "button" : "div",
+      "ts-listitem" + (clickable ? " ts-listitem--btn" : ""),
+    );
+    if (clickable) n.type = "button";
+    if (o.disabled) n.disabled = true;
+    var ic = resolveIcon(o.icon);
+    if (ic) {
+      var iw = el("span", "ts-listitem__icon");
+      iw.appendChild(ic);
+      n.appendChild(iw);
+    }
+    var main = el("span", "ts-listitem__main");
+    main.appendChild(
+      el("span", "ts-listitem__label", o.label != null ? o.label : ""),
+    );
+    if (o.sublabel != null)
+      main.appendChild(el("span", "ts-listitem__sub", o.sublabel));
+    n.appendChild(main);
+    if (o.trailing != null) {
+      var tr = el("span", "ts-listitem__trailing");
+      appendChildren(tr, o.trailing);
+      n.appendChild(tr);
+    }
+    if (clickable)
+      n.addEventListener("click", function () {
+        if (!o.disabled) o.onClick(o);
+      });
+    return n;
+  }
+
+  function list(o) {
+    o = o || {};
+    var n = el("div", "ts-list");
+    (o.items || []).forEach(function (it) {
+      if (it && it.nodeType) n.appendChild(it);
+      else n.appendChild(listItem(it));
+    });
+    return n;
+  }
+
+  /* ── field (labeled control with optional hint) ──────────────────────── */
+  function field(o) {
+    o = o || {};
+    var n = el("div", "ts-field");
+    if (o.label != null) n.appendChild(el("label", "ts-field__label", o.label));
+    var ctrl = el("div", "ts-field__control");
+    appendChildren(ctrl, o.control);
+    n.appendChild(ctrl);
+    if (o.hint != null) n.appendChild(el("div", "ts-field__hint", o.hint));
+    return n;
+  }
+
+  /* ── section (grouped block) + divider ───────────────────────────────── */
+  function section(o) {
+    o = o || {};
+    var n = el("div", "ts-section");
+    if (o.title != null) n.appendChild(el("div", "ts-section__title", o.title));
+    var body = el("div", "ts-section__body");
+    appendChildren(body, o.children != null ? o.children : o.body);
+    n.appendChild(body);
+    return n;
+  }
+
+  function divider() {
+    return el("div", "ts-divider");
+  }
+
+  /* ── spinner (indeterminate) ─────────────────────────────────────────── */
+  function spinner(o) {
+    if (typeof o === "number") o = { size: o };
+    o = o || {};
+    var n = el("span", "ts-spin");
+    n.setAttribute("role", "status");
+    n.setAttribute("aria-label", "Loading");
+    if (o.size != null) {
+      var px = typeof o.size === "number" ? o.size + "px" : o.size;
+      n.style.width = px;
+      n.style.height = px;
+      if (typeof o.size === "number")
+        n.style.borderWidth = Math.max(2, Math.round(o.size / 8)) + "px";
+    }
+    return n;
+  }
+
+  /* ── kbd (keyboard-shortcut hint chip) ───────────────────────────────── */
+  function kbd(text) {
+    var wrap = el("span", "ts-kbds");
+    var keys = String(text == null ? "" : text).split("+");
+    keys.forEach(function (k, i) {
+      if (i > 0) wrap.appendChild(el("span", "ts-kbds__plus", "+"));
+      wrap.appendChild(el("kbd", "ts-kbd", k.trim()));
+    });
+    return wrap;
+  }
+
+  /* ── notice / banner (inline info bar) ───────────────────────────────── */
+  var NOTICE_ICON = { ok: "check", info: "info", warn: "alert", danger: "x-circle" };
+  function notice(o) {
+    if (typeof o === "string") o = { text: o };
+    o = o || {};
+    var variant = o.variant || "info";
+    var n = el("div", "ts-notice ts-notice--" + variant);
+    var iconName = o.icon != null ? o.icon : NOTICE_ICON[variant] || "info";
+    var ic = resolveIcon(iconName);
+    if (ic) {
+      var iw = el("span", "ts-notice__icon");
+      iw.appendChild(ic);
+      n.appendChild(iw);
+    }
+    var body = el("span", "ts-notice__body");
+    appendChildren(body, o.text);
+    n.appendChild(body);
+    return n;
+  }
+
   /* ── menus (dropdown / dropup / context) ─────────────────────────────── */
   function buildMenuItems(node, items, close) {
     var buttons = [];
@@ -688,6 +808,15 @@
     card: card,
     chip: chip,
     badge: badge,
+    list: list,
+    listItem: listItem,
+    field: field,
+    section: section,
+    divider: divider,
+    spinner: spinner,
+    kbd: kbd,
+    notice: notice,
+    banner: notice,
     menu: menu,
     contextMenu: contextMenu,
     dropdown: dropdown,

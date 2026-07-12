@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 // Tab Sage extension CLI. User-facing product is "Tab Sage"; this binary is
-// `tabsage`. Dependency-free Node ESM (Node 18+ for global fetch) — no install
-// needed beyond `npx @tabsage/cli`.
+// `tabsage`. Dependency-free Node ESM (Node 18+ for global fetch).
+//
+// Not yet published to npm: run it locally from a clone of this repo with
+// `node cli/tabsage.mjs <command>`. Once `@tabsage/cli` is published, the same
+// commands work via `npx @tabsage/cli <command>`.
 //
 //   tabsage new <id> [--ui] [--name … --description … --author … …]
 //   tabsage ui add [dir] [--version ui-vX.Y.Z] [--full]
@@ -31,6 +34,10 @@ const KNOWN_PERMISSIONS = [
   "dialogs",
   "adblock",
   "cutout",
+  "clipboard",
+  "downloads",
+  "badge",
+  "messaging",
 ];
 const ID_RE = /^[a-z0-9-]+$/;
 const VERSION_RE = /^\d+\.\d+\.\d+$/;
@@ -381,6 +388,9 @@ function cmdList() {
 
 /* ── help / version ───────────────────────────────────────────────────────── */
 const HELP = `Tab Sage — extension CLI (binary: tabsage)
+
+Not on npm yet — run locally from a clone: node cli/tabsage.mjs <command>
+(Once published, npx @tabsage/cli <command> works the same.)
 
 Usage:
   tabsage new <id> [--ui] [--name N --description D --author A]

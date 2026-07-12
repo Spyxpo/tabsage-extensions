@@ -2,7 +2,8 @@
 // Sage's on-device AI and shows the result in a dialog over the page. It
 // remembers the last summary per URL and toasts when done. It also doubles as
 // the reference for the `tabsage` host API (ai + storage + notifications +
-// dialogs). Everything runs locally — no network, no accounts.
+// dialogs + the always-on page/shortcuts groups). Everything runs locally — no
+// network, no accounts.
 (function () {
   // Content scripts can run more than once per page (e.g. after in-page
   // navigation), so bail out if we already installed.
@@ -22,13 +23,12 @@
 
   var storageKey = "summary:" + location.href;
 
-  function mainText() {
-    // News/blog pages often have MANY <article> elements — the real story plus
-    // teaser/related-story cards. Blindly taking the first <article> can grab a
-    // tiny card (e.g. just a headline + "Read more At: <url>"), which then fails
-    // the length check below. So score every plausible content container by its
-    // visible text length and keep the richest one; fall back to <body> only if
-    // no semantic container exists.
+  // Fallback text scraper for Tab Sage builds without the always-on `page`
+  // group. News/blog pages often have MANY <article> elements — the real story
+  // plus teaser/related-story cards — so blindly taking the first <article> can
+  // grab a tiny card. Score every plausible content container by its visible
+  // text length and keep the richest one; fall back to <body>.
+  function scrapeText() {
     var sels = [
       "article",
       "main",
@@ -51,7 +51,30 @@
       }
     });
     var root = best || document.body;
-    return (root && root.innerText ? root.innerText : "").slice(0, 6000);
+    return root && root.innerText ? root.innerText : "";
+  }
+
+  // Prefer the host's page.text() (no permission needed); fall back to the
+  // scraper above so it still works on older builds. Capped at 6000 chars.
+  async function pageText() {
+    if (tabsage.page && tabsage.page.text) {
+      try {
+        return (await tabsage.page.text()).slice(0, 6000);
+      } catch (e) {
+        console.warn("page.text() unavailable, scraping instead:", e);
+      }
+    }
+    return scrapeText().slice(0, 6000);
+  }
+
+  // Page metadata (title/url/wordCount) via the always-on page group, if any.
+  async function pageMeta() {
+    if (tabsage.page && tabsage.page.meta) {
+      try {
+        return await tabsage.page.meta();
+      } catch (e) {}
+    }
+    return { title: document.title, url: location.href };
   }
 
   // Show the summary in a dialog over the page (falls back to an alert if the
@@ -94,19 +117,24 @@
   }
 
   async function summarize() {
+    if (btn.disabled) return;
     btn.disabled = true;
     btn.textContent = "Summarizing…";
     try {
-      var text = mainText();
+      var text = await pageText();
       if (text.trim().length < 200) {
         showSummary("Not enough text on this page to summarize.");
         return;
       }
+      var meta = await pageMeta();
+      var titleLine = meta && meta.title ? "Title: " + meta.title + "\n\n" : "";
       // Use the same local assistant the AI sidebar uses (chat template) for a
       // cleaner, instruction-following summary. Falls back to ai.complete on
       // builds without ai.chat.
       var summary = await aiRespond(
-        "Summarize the following page in 3 short bullet points:\n\n" + text,
+        "Summarize the following page in 3 short bullet points:\n\n" +
+          titleLine +
+          text,
         {
           system:
             "You are a concise summarizer. Reply with 3 short bullet points and nothing else.",
@@ -139,6 +167,12 @@
   var btn = document.createElement("button");
   btn.id = "ts-ai-summary-btn";
   btn.textContent = "Summarize";
+  btn.title = "Summarize this page (Mod+Shift+U)";
   btn.addEventListener("click", summarize);
   document.body.appendChild(btn);
+
+  // Trigger a summary from the keyboard (shortcuts need no permission).
+  if (tabsage.shortcuts && tabsage.shortcuts.register) {
+    tabsage.shortcuts.register("Mod+Shift+U", summarize);
+  }
 })();

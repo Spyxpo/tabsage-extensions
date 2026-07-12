@@ -1,7 +1,7 @@
 {
   "id": "word-count",
   "name": "Selection Word Count",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Select text on any page and see its word and character count in a small badge.",
   "author": "Spyxpo",
   "homepage": "https://github.com/Spyxpo",

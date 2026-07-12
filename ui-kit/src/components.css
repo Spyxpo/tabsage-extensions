@@ -552,6 +552,198 @@
   animation-delay: 0.3s;
 }
 
+/* ── List (open tabs, storage entries, settings rows) ─────────────────────── */
+.ts-ui .ts-list {
+  display: flex;
+  flex-direction: column;
+  background: var(--ts-bg-elev);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-md);
+  overflow: hidden;
+}
+.ts-ui .ts-listitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--ts-fg);
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--ts-border);
+  text-align: left;
+}
+.ts-ui .ts-list > .ts-listitem:first-child {
+  border-top: 0;
+}
+.ts-ui .ts-listitem--btn {
+  cursor: pointer;
+  transition: background var(--ts-transition);
+}
+.ts-ui .ts-listitem--btn:hover {
+  background: var(--ts-bg-subtle);
+}
+.ts-ui .ts-listitem--btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ts-ui .ts-listitem__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--ts-fg-muted);
+}
+.ts-ui .ts-listitem__icon svg {
+  width: 18px;
+  height: 18px;
+}
+.ts-ui .ts-listitem__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ts-ui .ts-listitem__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ts-ui .ts-listitem__sub {
+  font-size: 12px;
+  color: var(--ts-fg-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ts-ui .ts-listitem__trailing {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--ts-fg-muted);
+}
+.ts-ui .ts-listitem__trailing svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Field (labeled control; .ts-field / __label defined under Inputs) ────── */
+.ts-ui .ts-field__control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ts-ui .ts-field__hint {
+  font-size: 12px;
+  color: var(--ts-fg-faint);
+}
+
+/* ── Section (grouped block) ──────────────────────────────────────────────── */
+.ts-ui .ts-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ts-ui .ts-section__title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ts-fg-muted);
+}
+.ts-ui .ts-section__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Divider ──────────────────────────────────────────────────────────────── */
+.ts-ui .ts-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--ts-border);
+  border: 0;
+}
+
+/* ── Keyboard shortcut hint (kbd) ─────────────────────────────────────────── */
+.ts-ui .ts-kbds {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ts-ui .ts-kbds__plus {
+  font-size: 11px;
+  color: var(--ts-fg-faint);
+}
+.ts-ui .ts-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  padding: 2px 6px;
+  font-family: var(--ts-font-mono);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--ts-fg-muted);
+  background: var(--ts-bg-subtle);
+  border: 1px solid var(--ts-border);
+  border-bottom-width: 2px;
+  border-radius: var(--ts-radius-sm);
+}
+
+/* ── Notice / banner (inline info bar) ────────────────────────────────────── */
+.ts-ui .ts-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--ts-fg);
+  background: var(--ts-bg-subtle);
+  border: 1px solid var(--ts-border);
+  border-left-width: 3px;
+  border-radius: var(--ts-radius-md);
+}
+.ts-ui .ts-notice__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+.ts-ui .ts-notice__icon svg {
+  width: 18px;
+  height: 18px;
+}
+.ts-ui .ts-notice__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ts-ui .ts-notice--info {
+  border-left-color: var(--ts-accent);
+}
+.ts-ui .ts-notice--info .ts-notice__icon {
+  color: var(--ts-accent);
+}
+.ts-ui .ts-notice--ok {
+  border-left-color: var(--ts-ok);
+}
+.ts-ui .ts-notice--ok .ts-notice__icon {
+  color: var(--ts-ok);
+}
+.ts-ui .ts-notice--warn {
+  border-left-color: var(--ts-warn);
+}
+.ts-ui .ts-notice--warn .ts-notice__icon {
+  color: var(--ts-warn);
+}
+.ts-ui .ts-notice--danger {
+  border-left-color: var(--ts-danger);
+}
+.ts-ui .ts-notice--danger .ts-notice__icon {
+  color: var(--ts-danger);
+}
+
 @keyframes ts-fade {
   from {
     opacity: 0;
