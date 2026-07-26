@@ -1,0 +1,33 @@
+{
+  "id": "trident",
+  "name": "Trident — Local AI Coding Agent",
+  "version": "1.0.0",
+  "description": "A local, Claude-Code-like coding agent that runs GGUF models in-process via the Trident CLI. No daemon, no API keys.",
+  "author": "spyxpo",
+  "homepage": "https://github.com/spyxpo/trident",
+  "permissions": [
+    "content_scripts",
+    "notifications",
+    "dialogs",
+    "storage",
+    "badge"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "tabsage-ui.js",
+        "contributes.js",
+        "vscode-shim.js",
+        "extension.js",
+        "content.js"
+      ],
+      "css": [
+        "style.css"
+      ],
+      "run_at": "document_end"
+    }
+  ]
+}

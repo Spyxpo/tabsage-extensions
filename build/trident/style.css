@@ -1,0 +1,30 @@
+/* Styles for the converted extension. The shim renders through the Tab Sage UI
+   Kit, so these only cover the pieces the kit does not own. Keep selectors
+   specific so the host page is unaffected. */
+
+/* Webview panels are rendered as a sandboxed iframe inside a UI Kit modal. */
+.ts-vsc-webview {
+  display: block;
+  width: 100%;
+  min-width: 320px;
+  min-height: 320px;
+  border: 0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+/* Fallback container used only when the UI Kit is not vendored. */
+.ts-vsc-webview-box {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483646;
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  height: 420px;
+  max-height: calc(100vh - 32px);
+  padding: 8px;
+  border-radius: 10px;
+  background: #1b1b1f;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}

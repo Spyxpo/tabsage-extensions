@@ -1,0 +1,33 @@
+{
+  "id": "oxide-lang",
+  "name": "Oxide Language",
+  "version": "0.0.1",
+  "description": "Syntax highlighting, error detection, code formatting, and IntelliSense for Oxide (.ox) programming language with OGRE GUI support",
+  "author": "Spyxpo",
+  "homepage": "https://github.com/aspect-build/oxide",
+  "permissions": [
+    "content_scripts",
+    "notifications",
+    "dialogs",
+    "storage",
+    "badge"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "tabsage-ui.js",
+        "contributes.js",
+        "vscode-shim.js",
+        "extension.js",
+        "content.js"
+      ],
+      "css": [
+        "style.css"
+      ],
+      "run_at": "document_end"
+    }
+  ]
+}

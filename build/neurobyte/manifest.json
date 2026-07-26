@@ -1,0 +1,35 @@
+{
+  "id": "neurobyte",
+  "name": "NeuroByte",
+  "version": "0.1.0",
+  "description": "AI-powered coding assistant using local Ollama models - like Claude Code but fully local",
+  "author": "neurobyte",
+  "homepage": "https://github.com/neurobyte/neurobyte-vscode",
+  "permissions": [
+    "content_scripts",
+    "clipboard",
+    "notifications",
+    "dialogs",
+    "storage",
+    "tabs",
+    "badge"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "tabsage-ui.js",
+        "contributes.js",
+        "vscode-shim.js",
+        "extension.js",
+        "content.js"
+      ],
+      "css": [
+        "style.css"
+      ],
+      "run_at": "document_end"
+    }
+  ]
+}
