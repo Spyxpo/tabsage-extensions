@@ -14,3 +14,6 @@ desktop.ini
 # Misc
 node_modules/
 *.log
+
+# transition.sh output — converted extensions are staged here for review
+build/

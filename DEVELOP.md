@@ -580,6 +580,44 @@ extension.
   visible in your source and is part of review.
 - No extension runs in incognito tabs.
 
+## Porting a VS Code extension
+
+`transition.sh` converts a VS Code extension into a Tab Sage extension:
+
+```bash
+./transition.sh --vscode ../my-vscode-extension
+```
+
+It reads the VS Code `package.json`, derives `manifest.json` from it (id, name,
+version, author, homepage, and a permission set inferred from the API calls it
+finds), turns `contributes.commands` into a launcher menu and
+`contributes.keybindings` into `tabsage.shortcuts` registrations, inlines the
+compiled JavaScript, and emits a `vscode` compatibility shim built on the
+`tabsage` API. The result lands in `build/<id>/`, which is gitignored: review it,
+test it, then copy it to `extensions/<id>/` when you are happy with it.
+
+The extension must already be compiled — `transition.sh` never runs npm. If
+`package.json` `main` points at `out/extension.js`, run
+`npm install && npm run compile` in the VS Code folder first. Extensions that
+`require` npm packages need bundling first (`esbuild --bundle --external:vscode`),
+then convert the bundle with `--entry dist/extension.js`.
+
+What survives the trip: commands, keybindings, settings (`workspace.getConfiguration`,
+backed by `tabsage.storage`), `globalState`/`workspaceState`, messages, quick
+picks, input boxes, status bar items (as a badge), output channels, webview
+panels (as a sandboxed iframe in a modal), and `env.clipboard` / `env.openExternal`.
+
+What does not: anything that needs an editor or a machine — `window.activeTextEditor`,
+`languages.*` providers, tree views, tasks, debug adapters, grammars, and Node
+built-ins like `fs` and `child_process`. Those resolve to stubs that log once,
+collect in `window.__tsVscUnmapped`, and are listed in the generated `README.md`
+so you know exactly what is left to rewrite. `path`, `events`, and `util` are
+reimplemented for the browser, so code that only uses those keeps working.
+
+Run `./transition.sh --help` for the full flag list (`--id`, `--permissions`,
+`--matches`, `--entry`, `--out`, `--no-ui`, `--force`). There is no Windows
+counterpart yet; on Windows, run it under WSL or Git Bash.
+
 ## Testing locally
 
 You don't need this repo to develop. Put your folder anywhere, open **Settings →

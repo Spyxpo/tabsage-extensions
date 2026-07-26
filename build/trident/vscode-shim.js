@@ -22,7 +22,7 @@
     if (warned[path]) return;
     warned[path] = true;
     unmapped.push(path);
-    console.warn("[vscode-shim] unmapped API: vscode." + path);
+    console.warn("[vscode-shim] unmapped: " + path);
   }
 
   // Properties that must never be faked: `then` in particular, because an
@@ -38,6 +38,19 @@
     name: 1,
     prototype: 1,
   };
+
+  // Wraps a namespace so members the shim does not implement become logged
+  // stubs instead of `undefined is not a function`.
+  function withFallback(path, obj) {
+    return new Proxy(obj, {
+      get: function (target, prop) {
+        if (prop in target) return target[prop];
+        if (typeof prop === "symbol" || NEVER_STUB[prop]) return undefined;
+        warnUnmapped(path + "." + String(prop));
+        return stub(path + "." + String(prop));
+      },
+    });
+  }
 
   function stub(path) {
     var target = function () {};
@@ -487,7 +500,7 @@
           });
         var title = plain(o.title || o.placeHolder || "Select");
         if (o.canPickMany) {
-          warnUnmapped("window.showQuickPick({ canPickMany: true })");
+          warnUnmapped("vscode.window.showQuickPick({ canPickMany: true })");
           return pick(title, entries).then(function (v) {
             return v === undefined ? undefined : [v];
           });
@@ -585,7 +598,7 @@
         });
         close = m.close;
       } else {
-        warnUnmapped("window.createWebviewPanel (no UI Kit — rendering bare)");
+        warnUnmapped("vscode.window.createWebviewPanel (no UI Kit — rendering bare)");
         var box = document.createElement("div");
         box.className = "ts-vsc-webview-box";
         box.appendChild(frame);
@@ -609,7 +622,7 @@
         },
         onDidReceiveMessage: messages.event,
         asWebviewUri: function (uri) {
-          warnUnmapped("Webview.asWebviewUri (local resources are not bundled)");
+          warnUnmapped("vscode.Webview.asWebviewUri (local resources are not bundled)");
           return uri;
         },
       };
@@ -728,15 +741,15 @@
         createWebviewPanel: createWebviewPanel,
         withProgress: withProgress,
         showTextDocument: function () {
-          warnUnmapped("window.showTextDocument");
+          warnUnmapped("vscode.window.showTextDocument");
           return Promise.resolve(undefined);
         },
         showOpenDialog: function () {
-          warnUnmapped("window.showOpenDialog");
+          warnUnmapped("vscode.window.showOpenDialog");
           return Promise.resolve(undefined);
         },
         showSaveDialog: function () {
-          warnUnmapped("window.showSaveDialog");
+          warnUnmapped("vscode.window.showSaveDialog");
           return Promise.resolve(undefined);
         },
         activeTextEditor: undefined,
@@ -789,15 +802,15 @@
           };
         },
         findFiles: function () {
-          warnUnmapped("workspace.findFiles");
+          warnUnmapped("vscode.workspace.findFiles");
           return Promise.resolve([]);
         },
         openTextDocument: function () {
-          warnUnmapped("workspace.openTextDocument");
+          warnUnmapped("vscode.workspace.openTextDocument");
           return Promise.resolve(undefined);
         },
         applyEdit: function () {
-          warnUnmapped("workspace.applyEdit");
+          warnUnmapped("vscode.workspace.applyEdit");
           return Promise.resolve(false);
         },
         fs: stub("workspace.fs"),
@@ -843,7 +856,7 @@
 
       extensions: {
         getExtension: function () {
-          warnUnmapped("extensions.getExtension");
+          warnUnmapped("vscode.extensions.getExtension");
           return undefined;
         },
         all: [],
@@ -884,7 +897,12 @@
     };
 
     // Anything the shim does not implement resolves to a logged stub rather
-    // than an undefined-property crash.
+    // than an undefined-property crash — at the top level and one level down,
+    // which is where most of the API actually lives.
+    ["window", "workspace", "commands", "env", "extensions"].forEach(function (ns) {
+      base[ns] = withFallback("vscode." + ns, base[ns]);
+    });
+
     var vscode = new Proxy(base, {
       get: function (target, prop) {
         if (prop in target) return target[prop];
@@ -894,8 +912,8 @@
         // letting them copy it into a plain object and lose the stub fallback.
         if (prop === "__esModule") return true;
         if (prop === "default") return vscode;
-        warnUnmapped(String(prop));
-        return stub(String(prop));
+        warnUnmapped("vscode." + String(prop));
+        return stub("vscode." + String(prop));
       },
     });
 

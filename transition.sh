@@ -604,7 +604,7 @@ cat > "$stage/vscode-shim.js" <<'SHIMJS'
           });
         var title = plain(o.title || o.placeHolder || "Select");
         if (o.canPickMany) {
-          warnUnmapped("window.showQuickPick({ canPickMany: true })");
+          warnUnmapped("vscode.window.showQuickPick({ canPickMany: true })");
           return pick(title, entries).then(function (v) {
             return v === undefined ? undefined : [v];
           });
@@ -702,7 +702,7 @@ cat > "$stage/vscode-shim.js" <<'SHIMJS'
         });
         close = m.close;
       } else {
-        warnUnmapped("window.createWebviewPanel (no UI Kit — rendering bare)");
+        warnUnmapped("vscode.window.createWebviewPanel (no UI Kit — rendering bare)");
         var box = document.createElement("div");
         box.className = "ts-vsc-webview-box";
         box.appendChild(frame);
@@ -726,7 +726,7 @@ cat > "$stage/vscode-shim.js" <<'SHIMJS'
         },
         onDidReceiveMessage: messages.event,
         asWebviewUri: function (uri) {
-          warnUnmapped("Webview.asWebviewUri (local resources are not bundled)");
+          warnUnmapped("vscode.Webview.asWebviewUri (local resources are not bundled)");
           return uri;
         },
       };
@@ -845,15 +845,15 @@ cat > "$stage/vscode-shim.js" <<'SHIMJS'
         createWebviewPanel: createWebviewPanel,
         withProgress: withProgress,
         showTextDocument: function () {
-          warnUnmapped("window.showTextDocument");
+          warnUnmapped("vscode.window.showTextDocument");
           return Promise.resolve(undefined);
         },
         showOpenDialog: function () {
-          warnUnmapped("window.showOpenDialog");
+          warnUnmapped("vscode.window.showOpenDialog");
           return Promise.resolve(undefined);
         },
         showSaveDialog: function () {
-          warnUnmapped("window.showSaveDialog");
+          warnUnmapped("vscode.window.showSaveDialog");
           return Promise.resolve(undefined);
         },
         activeTextEditor: undefined,
@@ -906,15 +906,15 @@ cat > "$stage/vscode-shim.js" <<'SHIMJS'
           };
         },
         findFiles: function () {
-          warnUnmapped("workspace.findFiles");
+          warnUnmapped("vscode.workspace.findFiles");
           return Promise.resolve([]);
         },
         openTextDocument: function () {
-          warnUnmapped("workspace.openTextDocument");
+          warnUnmapped("vscode.workspace.openTextDocument");
           return Promise.resolve(undefined);
         },
         applyEdit: function () {
-          warnUnmapped("workspace.applyEdit");
+          warnUnmapped("vscode.workspace.applyEdit");
           return Promise.resolve(false);
         },
         fs: stub("workspace.fs"),
@@ -960,7 +960,7 @@ cat > "$stage/vscode-shim.js" <<'SHIMJS'
 
       extensions: {
         getExtension: function () {
-          warnUnmapped("extensions.getExtension");
+          warnUnmapped("vscode.extensions.getExtension");
           return undefined;
         },
         all: [],
@@ -1016,8 +1016,8 @@ cat > "$stage/vscode-shim.js" <<'SHIMJS'
         // letting them copy it into a plain object and lose the stub fallback.
         if (prop === "__esModule") return true;
         if (prop === "default") return vscode;
-        warnUnmapped(String(prop));
-        return stub(String(prop));
+        warnUnmapped("vscode." + String(prop));
+        return stub("vscode." + String(prop));
       },
     });
 
@@ -1919,7 +1919,12 @@ const droppedContributes = Object.keys(contributes).filter(
   (k) => ["commands", "keybindings", "configuration"].indexOf(k) < 0,
 );
 if (droppedContributes.length) {
-  notes.push("contributes." + droppedContributes.join(", contributes.") + " has no Tab Sage equivalent and was dropped.");
+  notes.push(
+    "contributes." + droppedContributes.join(", contributes.") +
+      (droppedContributes.length === 1 ? " has" : " have") +
+      " no Tab Sage equivalent and " +
+      (droppedContributes.length === 1 ? "was" : "were") + " dropped.",
+  );
 }
 if (pkg.activationEvents && pkg.activationEvents.length) {
   notes.push(
@@ -2062,7 +2067,10 @@ fs.writeFileSync(path.join(outDir, "manifest.json"), JSON.stringify(manifest, nu
 /* ── README with the conversion report ────────────────────────────────────── */
 
 function bullets(list) {
-  return list.length ? list.map((l) => "- " + l).join("\n") : "- None.";
+  if (!list.length) return "- None.";
+  return list
+    .map((l) => "- " + l.charAt(0).toUpperCase() + l.slice(1))
+    .join("\n");
 }
 
 const readme = [
