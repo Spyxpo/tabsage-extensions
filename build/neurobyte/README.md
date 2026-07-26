@@ -42,8 +42,8 @@ Converted from the VS Code extension `neurobyte` (0.1.0) by `transition.sh`.
 
 ### Blockers
 
-- the code requires Node built-ins that do not exist in a content script: child_process, fs, os. They resolve to stubs that log and do nothing, so every code path through them is dead until you replace it.
-- the code requires npm packages that were not inlined: axios. Bundle them (esbuild --bundle --external:vscode) and convert the bundle with --entry.
+- The code requires Node built-ins that do not exist in a content script: child_process, fs, os. They resolve to stubs that log and do nothing, so every code path through them is dead until you replace it.
+- The code requires npm packages that were not inlined: axios. Bundle them (esbuild --bundle --external:vscode) and convert the bundle with --entry.
 
 ### VS Code APIs with no Tab Sage equivalent
 
@@ -55,10 +55,10 @@ These were found in the source and resolve to logged stubs at runtime. Check
 - window.registerWebviewViewProvider  (sidebar views)
 - window.createTerminal
 
-### Dropped from the VS Code manifest
+### Notes
 
-- require(path) is served by the shim's own browser implementation.
-- contributes.menus, contributes.submenus, contributes.viewsContainers, contributes.views has no Tab Sage equivalent and was dropped.
+- `require(path)` is served by the shim's own browser implementation.
+- `contributes.menus`, `contributes.submenus`, `contributes.viewsContainers`, `contributes.views` have no Tab Sage equivalent and were dropped.
 - activationEvents (onStartupFinished) were dropped — a Tab Sage content script always runs, at document_end.
 
 ### Before publishing

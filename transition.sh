@@ -1628,7 +1628,7 @@ if (!VERSION_RE.test(version)) {
   die('version "' + version + '" is not MAJOR.MINOR.PATCH. Pass --version 1.0.0.');
 }
 if (pkg.version && version !== pkg.version && !env.TS_VERSION) {
-  notes.push('version "' + pkg.version + '" was normalized to "' + version + '".');
+  notes.push('Version "' + pkg.version + '" was normalized to "' + version + '".');
 }
 
 const name = env.TS_NAME || pkg.displayName || pkg.name || id;
@@ -1806,14 +1806,14 @@ const stubbedBuiltins = [...builtins].filter((b) => !POLYFILLED.has(b)).sort();
 const polyfilledBuiltins = [...builtins].filter((b) => POLYFILLED.has(b)).sort();
 if (stubbedBuiltins.length) {
   blockers.push(
-    "the code requires Node built-ins that do not exist in a content script: " +
+    "The code requires Node built-ins that do not exist in a content script: " +
       stubbedBuiltins.join(", ") +
       ". They resolve to stubs that log and do nothing, so every code path through them is dead until you replace it.",
   );
 }
 if (polyfilledBuiltins.length) {
   notes.push(
-    "require(" + polyfilledBuiltins.join("), require(") + ") is served by the shim's own browser implementation.",
+    "`require(" + polyfilledBuiltins.join(")`, `require(") + ")` is served by the shim's own browser implementation.",
   );
 }
 
@@ -1827,7 +1827,7 @@ while ((rm = BARE_RE.exec(allSource))) {
 }
 if (bareRequires.size) {
   blockers.push(
-    "the code requires npm packages that were not inlined: " +
+    "The code requires npm packages that were not inlined: " +
       [...bareRequires].sort().join(", ") +
       ". Bundle them (esbuild --bundle --external:vscode) and convert the bundle with --entry.",
   );
@@ -1920,7 +1920,7 @@ const droppedContributes = Object.keys(contributes).filter(
 );
 if (droppedContributes.length) {
   notes.push(
-    "contributes." + droppedContributes.join(", contributes.") +
+    "`contributes." + droppedContributes.join("`, `contributes.") + "`" +
       (droppedContributes.length === 1 ? " has" : " have") +
       " no Tab Sage equivalent and " +
       (droppedContributes.length === 1 ? "was" : "were") + " dropped.",
@@ -2067,10 +2067,7 @@ fs.writeFileSync(path.join(outDir, "manifest.json"), JSON.stringify(manifest, nu
 /* ── README with the conversion report ────────────────────────────────────── */
 
 function bullets(list) {
-  if (!list.length) return "- None.";
-  return list
-    .map((l) => "- " + l.charAt(0).toUpperCase() + l.slice(1))
-    .join("\n");
+  return list.length ? list.map((l) => "- " + l).join("\n") : "- None.";
 }
 
 const readme = [

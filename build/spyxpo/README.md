@@ -36,7 +36,7 @@ These were found in the source and resolve to logged stubs at runtime. Check
 
 - None.
 
-### Dropped from the VS Code manifest
+### Notes
 
 - activationEvents (onCommand:spyxpo.helloWorld) were dropped — a Tab Sage content script always runs, at document_end.
 
