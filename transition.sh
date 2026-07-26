@@ -2120,7 +2120,7 @@ const readme = [
   "",
   bullets(unmapped),
   "",
-  "### Dropped from the VS Code manifest",
+  "### Notes",
   "",
   bullets(notes),
   "",
